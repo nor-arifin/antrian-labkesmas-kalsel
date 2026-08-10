@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./server:/app/server
+      - ./data:/app/data
+      - ./public/audio:/app/public/audio
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DB_PATH=/app/data/antrian.db
+      - CLINIC_NAME=LABORATORIUM KESEHATAN PROVINSI KALIMANTAN TENGAH
+      - RESET_HOUR=23
+      - TZ=Asia/Pontianak
+    restart: unless-stopped
