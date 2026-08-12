@@ -58,6 +58,26 @@ export default function queueRoutes(io) {
     }
   });
 
+  router.put('/queue/:id/recall', (req, res) => {
+    try {
+      const db = getDb();
+      const queueId = parseInt(req.params.id);
+      const queue = db.prepare('SELECT * FROM queues WHERE id = ?').get(queueId);
+      if (!queue) return res.status(404).json({ error: 'Queue not found' });
+
+      const now = new Date().toISOString();
+      db.prepare('UPDATE queues SET called_at = ? WHERE id = ?').run(now, queueId);
+
+      const updatedQueue = db.prepare('SELECT * FROM queues WHERE id = ?').get(queueId);
+      const audio = buildAudioSequence(updatedQueue);
+      io.emit('queue:calling', { queue: updatedQueue, audio: getAudioFiles(audio) });
+
+      res.json({ data: updatedQueue, audio: getAudioFiles(audio) });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   router.get('/queue/active', (req, res) => {
     try {
       const queues = qm.getActiveQueues();
@@ -80,10 +100,17 @@ export default function queueRoutes(io) {
     try {
       const db = getDb();
       const rows = db.prepare(`
-        SELECT q.*, s.name as service_name, s.color as service_color
+        SELECT q.*, s.name as service_name, s.color as service_color,
+          CASE
+            WHEN q.done_at IS NOT NULL AND q.served_at IS NOT NULL
+            THEN ROUND((julianday(q.done_at) - julianday(q.served_at)) * 24 * 60, 1)
+            ELSE NULL
+          END as service_duration_minutes
         FROM queues q
         JOIN services s ON q.service_id = s.id
-        WHERE q.counter_id = ? AND q.status IN ('done', 'skip')
+        WHERE q.counter_id = ?
+          AND q.status IN ('done', 'skip')
+          AND DATE(q.done_at) = DATE('now', 'localtime')
         ORDER BY q.done_at DESC
         LIMIT 10
       `).all(parseInt(req.params.counterId));

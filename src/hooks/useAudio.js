@@ -6,9 +6,8 @@ export function useAudio() {
 
   const playSequence = useCallback(async (files) => {
     if (!files || files.length === 0) return;
-    queueRef.current = [...files];
-
     if (playingRef.current) return;
+    queueRef.current = [...files];
     playingRef.current = true;
 
     while (queueRef.current.length > 0) {
@@ -16,6 +15,7 @@ export function useAudio() {
       try {
         await new Promise((resolve, reject) => {
           const audio = new Audio(file);
+          audio.playbackRate = 1.5;
           audio.onended = resolve;
           audio.onerror = () => reject(new Error(`Failed to load ${file}`));
           audio.play().catch(reject);

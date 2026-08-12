@@ -9,3 +9,7 @@ data/*.db-shm
 *.log
 nginx/ssl/
 public/images/
+public/videos/
+public/audio/
+.rtk/
+CLAUDE.md

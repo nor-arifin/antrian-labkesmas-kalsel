@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { useSocket } from '../hooks/useSocket';
 import { printTicket } from '../lib/printer';
+import PinGate from '../components/PinGate';
 
 function FloatingCircles() {
   return (
@@ -60,25 +61,28 @@ export default function Kiosk() {
 
   if (result) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-white p-8 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0d9488 0%, #11B9A0 30%, #65a30d 70%, #d3dd03 100%)' }}>
-        <FloatingCircles />
-        <div className="text-center relative z-10">
-          <div className="mb-6">
-            <img src="/logo/antian_logo.svg" alt="Logo" className="w-28 h-28 mx-auto drop-shadow-2xl" />
+      <PinGate pageName="Kiosk">
+        <div className="min-h-screen flex flex-col items-center justify-center text-white p-8 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0d9488 0%, #11B9A0 30%, #65a30d 70%, #d3dd03 100%)' }}>
+          <FloatingCircles />
+          <div className="text-center relative z-10">
+            <div className="mb-6">
+              <img src="/logo/antian_logo.svg" alt="Logo" className="w-28 h-28 mx-auto drop-shadow-2xl" />
+            </div>
+            <p className="text-2xl mb-4 opacity-80">Nomor Antrian Anda</p>
+            <div className="text-[120px] font-black leading-none tracking-tight drop-shadow-lg" style={{ textShadow: '0 4px 30px rgba(0,0,0,0.3)' }}>{result.queue_number}</div>
+            <div className="mt-6 bg-white/15 backdrop-blur-sm rounded-2xl px-8 py-4 inline-block border border-white/20">
+              <p className="text-2xl">Antrian di depan: <span className="font-bold">{waitingCount}</span> orang</p>
+            </div>
+            <p className="text-lg mt-6 opacity-60 animate-pulse">Tiket sedang dicetak...</p>
           </div>
-          <p className="text-2xl mb-4 opacity-80">Nomor Antrian Anda</p>
-          <div className="text-[120px] font-black leading-none tracking-tight drop-shadow-lg" style={{ textShadow: '0 4px 30px rgba(0,0,0,0.3)' }}>{result.queue_number}</div>
-          <div className="mt-6 bg-white/15 backdrop-blur-sm rounded-2xl px-8 py-4 inline-block border border-white/20">
-            <p className="text-2xl">Antrian di depan: <span className="font-bold">{waitingCount}</span> orang</p>
-          </div>
-          <p className="text-lg mt-6 opacity-60 animate-pulse">Tiket sedang dicetak...</p>
         </div>
-      </div>
+      </PinGate>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0d9488 0%, #11B9A0 30%, #65a30d 70%, #d3dd03 100%)' }}>
+    <PinGate pageName="Kiosk">
+      <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0d9488 0%, #11B9A0 30%, #65a30d 70%, #d3dd03 100%)' }}>
       <FloatingCircles />
 
       <header className="text-white text-center py-10 px-4 relative z-10">
@@ -118,6 +122,7 @@ export default function Kiosk() {
             { label: 'Normal', value: 0, icon: '👤' },
             { label: 'Lansia', value: 1, icon: '👴' },
             { label: 'Ibu Hamil', value: 2, icon: '🤰' },
+            { label: 'Cito', value: 3, icon: '🚨' },
           ].map(p => (
             <button
               key={p.value}
@@ -144,5 +149,6 @@ export default function Kiosk() {
         </div>
       )}
     </div>
+    </PinGate>
   );
 }

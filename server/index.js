@@ -29,9 +29,10 @@ app.use(express.json());
 
 const isProd = process.env.NODE_ENV === 'production';
 
+app.use('/audio', express.static(join(__dirname, '..', 'public', 'audio')));
+
 if (isProd) {
   app.use(express.static(join(__dirname, '..', 'public', 'static')));
-  app.use('/audio', express.static(join(__dirname, '..', 'public', 'audio')));
 }
 
 app.use('/api', queueRoutes(io));

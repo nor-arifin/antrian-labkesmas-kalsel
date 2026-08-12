@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useSocket } from '../hooks/useSocket';
-import { useAudio } from '../hooks/useAudio';
+import PinGate from '../components/PinGate';
 
 export default function Counter() {
   const { id } = useParams();
@@ -11,18 +11,36 @@ export default function Counter() {
   const [nextQueue, setNextQueue] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [servingStartedAt, setServingStartedAt] = useState(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const timerRef = useRef(null);
   const { on } = useSocket();
-  const { playSequence } = useAudio();
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
 
   useEffect(() => { loadData(); }, [id]);
 
   useEffect(() => {
+    if (!servingStartedAt) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
+    }
+    timerRef.current = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - servingStartedAt) / 1000));
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, [servingStartedAt]);
+
+  useEffect(() => {
     const unsubs = [
-      on('queue:calling', ({ queue, audio }) => {
+      on('queue:calling', ({ queue }) => {
         if (queue.counter_id === parseInt(id)) {
           setCurrentQueue(queue);
           setNextQueue(null);
-          if (audio) playSequence(audio);
         }
         loadData();
       }),
@@ -70,7 +88,7 @@ export default function Counter() {
     setLoading(true);
     try {
       const res = await api.getNext(parseInt(id));
-      if (res.data) { setCurrentQueue(res.data); setNextQueue(null); if (res.audio) playSequence(res.audio); }
+      if (res.data) { setCurrentQueue(res.data); setNextQueue(null); }
     } catch (err) { alert('Gagal: ' + err.message); } finally { setLoading(false); }
   }
 
@@ -79,8 +97,22 @@ export default function Counter() {
     setLoading(true);
     try {
       await api.updateStatus(currentQueue.id, status);
+      if (status === 'serving') {
+        setServingStartedAt(Date.now());
+      } else {
+        setServingStartedAt(null);
+        setElapsedSeconds(0);
+      }
       setCurrentQueue(null);
       await loadData(); await loadNext();
+    } catch (err) { alert('Gagal: ' + err.message); } finally { setLoading(false); }
+  }
+
+  async function handleRecall() {
+    if (!currentQueue || loading) return;
+    setLoading(true);
+    try {
+      await api.recallQueue(currentQueue.id);
     } catch (err) { alert('Gagal: ' + err.message); } finally { setLoading(false); }
   }
 
@@ -98,6 +130,7 @@ export default function Counter() {
   if (!counter) return <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center text-gray-500"><p className="text-xl animate-pulse">Memuat data loket...</p></div>;
 
   return (
+    <PinGate pageName="Counter">
     <div className="min-h-screen bg-[#f8fafc] flex flex-col">
       <header className="bg-gradient-to-r from-[#11B9A0] to-[#0d9488] text-white py-5 px-8 flex items-center gap-4 shadow-lg">
         <img src="/logo/antian_logo.svg" alt="Logo" className="w-12 h-12 drop-shadow-md" />
@@ -125,8 +158,11 @@ export default function Counter() {
             )}
             {!onBreak && currentQueue?.priority > 0 && (
               <p className="text-amber-500 mt-3 font-bold text-lg">
-                {currentQueue.priority === 1 ? 'Prioritas Lansia' : 'Prioritas Ibu Hamil'}
+                {currentQueue.priority === 3 ? 'Prioritas Cito' : currentQueue.priority === 1 ? 'Prioritas Lansia' : 'Prioritas Ibu Hamil'}
               </p>
+            )}
+            {servingStartedAt && (
+              <p className="text-emerald-600 mt-3 text-4xl font-black">{formatTime(elapsedSeconds)}</p>
             )}
           </div>
 
@@ -158,6 +194,16 @@ export default function Counter() {
               >
                 PANGGIL
               </button>
+
+              {currentQueue && currentQueue.status === 'calling' && (
+                <button
+                  onClick={handleRecall}
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white text-xl font-bold py-5 rounded-2xl transition-all duration-300 shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-[0.99]"
+                >
+                  🔄 PANGGIL ULANG
+                </button>
+              )}
 
               {currentQueue && (
                 <div className="flex gap-4">
@@ -199,13 +245,18 @@ export default function Counter() {
               {history.map(q => (
                 <div key={q.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
                   <span className="font-bold text-gray-700">{q.queue_number}</span>
-                  <span className={`text-xs px-3 py-1 rounded-lg font-semibold ${
-                    q.status === 'done' ? 'bg-emerald-100 text-emerald-700' :
-                    q.status === 'skip' ? 'bg-amber-100 text-amber-700' :
-                    'bg-gray-100 text-gray-600'
-                  }`}>
-                    {q.status === 'done' ? 'Selesai' : q.status === 'skip' ? 'Lewati' : q.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {q.service_duration_minutes != null && (
+                      <span className="text-xs text-gray-500 font-semibold">{q.service_duration_minutes} mnt</span>
+                    )}
+                    <span className={`text-xs px-3 py-1 rounded-lg font-semibold ${
+                      q.status === 'done' ? 'bg-emerald-100 text-emerald-700' :
+                      q.status === 'skip' ? 'bg-amber-100 text-amber-700' :
+                      'bg-gray-100 text-gray-600'
+                    }`}>
+                      {q.status === 'done' ? 'Selesai' : q.status === 'skip' ? 'Lewati' : q.status}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -213,5 +264,6 @@ export default function Counter() {
         </div>
       </div>
     </div>
+    </PinGate>
   );
 }

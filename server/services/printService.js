@@ -24,7 +24,7 @@ export function generateTicket(queueId) {
   const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
   const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 
-  const priorityText = queue.priority === 1 ? 'Lansia' : queue.priority === 2 ? 'Ibu Hamil' : 'Tidak';
+  const priorityText = queue.priority === 3 ? 'Cito' : queue.priority === 1 ? 'Lansia' : queue.priority === 2 ? 'Ibu Hamil' : 'Tidak';
 
   const CHARS = 48;
   const name = clinicName.length > CHARS ? clinicName.slice(0, CHARS) : clinicName;

@@ -13,13 +13,14 @@
     "setup": "node server/db/schema.js && node server/db/seed.js"
   },
   "dependencies": {
-    "sql.js": "^1.11.0",
     "cors": "^2.8.5",
     "escpos-builder-ts": "^0.3.1",
     "express": "^4.21.0",
+    "multer": "^2.2.0",
     "node-cron": "^3.0.3",
     "pdfkit": "^0.15.0",
-    "socket.io": "^4.8.0"
+    "socket.io": "^4.8.0",
+    "sql.js": "^1.11.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.0",

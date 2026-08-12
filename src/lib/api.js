@@ -24,6 +24,7 @@ export const api = {
   getActive: () => request('/queue/active'),
   getStats: () => request('/queue/stats'),
   getHistory: (counterId) => request(`/queue/history/${counterId}`),
+  recallQueue: (id) => request(`/queue/${id}/recall`, { method: 'PUT' }),
 
   getServices: () => request('/service'),
   createService: (data) =>
@@ -44,6 +45,7 @@ export const api = {
     request('/print/ticket', { method: 'POST', body: JSON.stringify({ queueId }) }),
 
   getReportDaily: (date) => request(`/report/daily?date=${date}`),
+  getReportDailyDetail: (date) => request(`/report/daily-detail?date=${date}`),
   getReportWeekly: (start, end) => request(`/report/weekly?start=${start}&end=${end}`),
   getReportMonthly: (month, year) => request(`/report/monthly?month=${month}&year=${year}`),
 
@@ -52,4 +54,14 @@ export const api = {
   getSettings: () => request('/settings'),
   updateSetting: (key, value) =>
     request('/settings', { method: 'PUT', body: JSON.stringify({ key, value }) }),
+
+  uploadVideo: async (formData) => {
+    const res = await fetch(`${API_BASE}/settings/video`, { method: 'POST', body: formData });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Upload failed' }));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+    return res.json();
+  },
+  deleteVideo: () => request('/settings/video', { method: 'DELETE' }),
 };
