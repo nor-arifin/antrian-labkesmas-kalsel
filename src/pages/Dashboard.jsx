@@ -819,10 +819,9 @@ export default function Dashboard() {
                   <span className="font-semibold text-gray-700">Tampilkan Video</span>
                   <button
                     onClick={handleToggleVideo}
-                    disabled={!videoUrl}
-                    className={`relative w-12 h-7 rounded-full transition-colors ${
+                    className={`relative w-12 h-7 rounded-full transition-colors cursor-pointer ${
                       videoEnabled ? 'bg-[#11B9A0]' : 'bg-gray-300'
-                    } ${!videoUrl ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    }`}
                   >
                     <span className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${
                       videoEnabled ? 'translate-x-5' : 'translate-x-0.5'
