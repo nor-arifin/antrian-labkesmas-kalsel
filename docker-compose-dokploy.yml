@@ -20,34 +20,11 @@ services:
       - dokploy-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.antrian-api.rule=Host(`antrian.labklin.net`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.antrian-api.entrypoints=websecure"
-      - "traefik.http.routers.antrian-api.tls.certresolver=letsencrypt"
-      - "traefik.http.services.antrian-api.loadbalancer.server.port=3001"
-      - "traefik.http.routers.antrian-socket.rule=Host(`antrian.labklin.net`) && PathPrefix(`/socket.io`)"
-      - "traefik.http.routers.antrian-socket.entrypoints=websecure"
-      - "traefik.http.routers.antrian-socket.tls.certresolver=letsencrypt"
-      - "traefik.http.services.antrian-socket.loadbalancer.server.port=3001"
-    restart: unless-stopped
-
-  nginx:
-    image: nginx:alpine
-    volumes:
-      - ./nginx/nginx-dokploy.conf:/etc/nginx/nginx.conf:ro
-      - ./public/audio:/app/public/audio:ro
-      - ./public/logo:/app/public/logo:ro
-      - ./public/videos:/app/public/videos:ro
-    networks:
-      - dokploy-network
-    labels:
-      - "traefik.enable=true"
       - "traefik.http.routers.antrian.rule=Host(`antrian.labklin.net`)"
       - "traefik.http.routers.antrian.entrypoints=websecure"
       - "traefik.http.routers.antrian.tls.certresolver=letsencrypt"
-      - "traefik.http.services.antrian.loadbalancer.server.port=80"
+      - "traefik.http.services.antrian.loadbalancer.server.port=3001"
     restart: unless-stopped
-    depends_on:
-      - backend
 
 networks:
   dokploy-network:

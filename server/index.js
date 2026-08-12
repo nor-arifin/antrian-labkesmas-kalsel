@@ -30,6 +30,8 @@ app.use(express.json());
 const isProd = process.env.NODE_ENV === 'production';
 
 app.use('/audio', express.static(join(__dirname, '..', 'public', 'audio')));
+app.use('/logo', express.static(join(__dirname, '..', 'public', 'logo'), { maxAge: '1d' }));
+app.use('/videos', express.static(join(__dirname, '..', 'public', 'videos'), { maxAge: '1h' }));
 
 if (isProd) {
   app.use(express.static(join(__dirname, '..', 'public', 'static')));
