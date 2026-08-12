@@ -1,0 +1,12 @@
+{
+  "name": "antrian-kiosk",
+  "version": "1.0.0",
+  "description": "Antrian Labkesprov Kalsel - Kiosk Mode",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^33.0.0"
+  }
+}

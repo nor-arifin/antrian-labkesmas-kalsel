@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { writeFileSync, unlinkSync } from 'fs';
 import { execSync } from 'child_process';
-import { generateTicket } from '../services/printService.js';
+import { generateTicket, generateTicketHTML } from '../services/printService.js';
 import { getDb } from '../db/connection.js';
 import PDFDocument from 'pdfkit';
 
@@ -13,11 +13,12 @@ export default function printRoutes(io) {
       const { queueId } = req.body;
       if (!queueId) return res.status(400).json({ error: 'queueId required' });
 
-      const { lines, queue } = generateTicket(queueId);
+      const html = generateTicketHTML(queueId);
       const printerDevice = process.env.PRINTER_DEVICE;
 
       if (printerDevice) {
         try {
+          const { lines } = generateTicket(queueId);
           const escposBytes = buildESCPOS(lines);
           const tmpFile = `/tmp/ticket_${queueId}.bin`;
           writeFileSync(tmpFile, Buffer.from(escposBytes));
@@ -25,12 +26,10 @@ export default function printRoutes(io) {
           unlinkSync(tmpFile);
           res.json({ data: { success: true, printer: 'local' } });
         } catch {
-          const base64 = Buffer.from(buildESCPOS(lines)).toString('base64');
-          res.json({ data: { success: true, printer: 'remote', printData: base64 } });
+          res.json({ data: { success: true, printer: 'remote', html } });
         }
       } else {
-        const base64 = Buffer.from(buildESCPOS(lines)).toString('base64');
-        res.json({ data: { success: true, printer: 'remote', printData: base64 } });
+        res.json({ data: { success: true, printer: 'remote', html } });
       }
     } catch (err) {
       res.status(500).json({ error: err.message });

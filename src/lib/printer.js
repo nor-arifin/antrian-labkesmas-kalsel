@@ -3,18 +3,22 @@ import { api } from './api';
 export async function printTicket(queueId) {
   try {
     const res = await api.printTicket(queueId);
-    const { printer, printData } = res.data;
+    const { html } = res.data;
 
-    if (printer === 'remote' && printData) {
-      const binary = atob(printData);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-      return { success: true, data: bytes };
+    if (!html) {
+      return { success: true, message: 'No print data' };
     }
 
-    return { success: true, message: 'Print job sent to local printer' };
+    if (window.electronAPI) {
+      return new Promise((resolve) => {
+        window.electronAPI.onPrintResult((result) => {
+          resolve(result);
+        });
+        window.electronAPI.printTicket(html);
+      });
+    }
+
+    return { success: true, html };
   } catch (err) {
     console.error('Print failed:', err);
     return { success: false, error: err.message };

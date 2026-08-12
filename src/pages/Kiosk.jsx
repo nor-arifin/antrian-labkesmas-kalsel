@@ -40,7 +40,7 @@ export default function Kiosk() {
 
   useEffect(() => {
     if (result) {
-      const timer = setTimeout(() => setResult(null), 5000);
+      const timer = setTimeout(() => setResult(null), 3000);
       return () => clearTimeout(timer);
     }
   }, [result]);
@@ -73,7 +73,10 @@ export default function Kiosk() {
             <div className="mt-6 bg-white/15 backdrop-blur-sm rounded-2xl px-8 py-4 inline-block border border-white/20">
               <p className="text-2xl">Antrian di depan: <span className="font-bold">{waitingCount}</span> orang</p>
             </div>
-            <p className="text-lg mt-6 opacity-60 animate-pulse">Tiket sedang dicetak...</p>
+            <div className="mt-8 flex items-center justify-center gap-3">
+              <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-lg opacity-80">Tiket sedang dicetak...</p>
+            </div>
           </div>
         </div>
       </PinGate>
@@ -144,7 +147,7 @@ export default function Kiosk() {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-3xl p-10 text-center shadow-2xl">
             <div className="w-16 h-16 border-4 border-[#11B9A0] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-xl font-semibold text-gray-700">Memproses...</p>
+            <p className="text-xl font-semibold text-gray-700">Memproses & Mencetak...</p>
           </div>
         </div>
       )}
