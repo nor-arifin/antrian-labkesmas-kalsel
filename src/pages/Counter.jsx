@@ -9,6 +9,7 @@ export default function Counter() {
   const [counter, setCounter] = useState(null);
   const [currentQueue, setCurrentQueue] = useState(null);
   const [nextQueue, setNextQueue] = useState(null);
+  const [waitingList, setWaitingList] = useState([]);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [servingStartedAt, setServingStartedAt] = useState(null);
@@ -43,13 +44,16 @@ export default function Counter() {
           setNextQueue(null);
         }
         loadData();
+        loadWaitingList();
       }),
       on('queue:updated', ({ queue }) => {
         if (queue.counter_id === parseInt(id) && queue.status === 'done') {
           setCurrentQueue(null);
           loadNext();
         }
+        loadWaitingList();
       }),
+      on('queue:created', () => loadWaitingList()),
       on('counter:updated', ({ counter: c }) => {
         if (c && c.id === parseInt(id)) {
           setCounter(prev => ({ ...prev, status: c.status }));
@@ -68,6 +72,12 @@ export default function Counter() {
       const serving = a.data.find(q => q.counter_id === parseInt(id) && (q.status === 'serving' || q.status === 'calling'));
       setCurrentQueue(serving);
       setHistory(h.data || []);
+      if (myCounter?.service_id) {
+        const waiting = a.data.filter(q => q.service_id === myCounter.service_id && q.status === 'waiting');
+        setWaitingList(waiting);
+      } else {
+        setWaitingList([]);
+      }
     } catch (err) { console.error(err); }
   }
 
@@ -79,6 +89,20 @@ export default function Counter() {
         const a = await api.getActive();
         const waiting = a.data.filter(q => q.service_id === myCounter.service_id && q.status === 'waiting');
         setNextQueue(waiting[0] || null);
+      }
+    } catch (err) { console.error(err); }
+  }
+
+  async function loadWaitingList() {
+    try {
+      const c = await api.getCounters();
+      const myCounter = c.data.find(x => x.id === parseInt(id));
+      if (myCounter?.service_id) {
+        const a = await api.getActive();
+        const waiting = a.data.filter(q => q.service_id === myCounter.service_id && q.status === 'waiting');
+        setWaitingList(waiting);
+      } else {
+        setWaitingList([]);
       }
     } catch (err) { console.error(err); }
   }
@@ -231,6 +255,54 @@ export default function Counter() {
               </button>
             </>
           )}
+
+          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+            <p className="text-sm text-gray-400 mb-4 uppercase tracking-widest font-semibold flex items-center gap-2">
+              <span className="w-2 h-2 bg-[#11B9A0] rounded-full"></span>
+              Antrian Menunggu
+              <span className="ml-auto text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md font-bold">
+                {waitingList.length} orang
+              </span>
+            </p>
+            {waitingList.length === 0 ? (
+              <p className="text-gray-400 text-center py-4 text-sm">Belum ada antrian menunggu</p>
+            ) : (
+              <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                {waitingList.map((q, idx) => {
+                  const priorityStyle = q.priority === 3
+                    ? 'border-red-300 bg-red-50'
+                    : q.priority > 0
+                    ? 'border-amber-300 bg-amber-50'
+                    : 'border-gray-200 bg-gray-50';
+                  const priorityLabel = q.priority === 3
+                    ? 'Cito'
+                    : q.priority === 1
+                    ? 'Lansia'
+                    : q.priority === 2
+                    ? 'Ibu Hamil'
+                    : null;
+                  return (
+                    <div key={q.id} className={`flex items-center justify-between p-3 rounded-xl border ${priorityStyle}`}>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-xs text-gray-400 font-mono w-8 shrink-0">#{idx + 1}</span>
+                        <span className="text-xl font-bold text-gray-700 truncate">{q.queue_number}</span>
+                        {priorityLabel && (
+                          <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold shrink-0 ${
+                            q.priority === 3 ? 'bg-red-200 text-red-800' : 'bg-amber-200 text-amber-800'
+                          }`}>
+                            {priorityLabel}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-gray-400 shrink-0 ml-2">
+                        {new Date(q.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="lg:w-80 bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
