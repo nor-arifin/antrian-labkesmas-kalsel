@@ -48,8 +48,7 @@ ipcMain.on('print-ticket', (event, html) => {
       printWindow.webContents.print(
         {
           silent: true,
-          printBackground: true,
-          deviceName: 'IWare POS'
+          printBackground: true
         },
         (success, failureReason) => {
           if (!success) {

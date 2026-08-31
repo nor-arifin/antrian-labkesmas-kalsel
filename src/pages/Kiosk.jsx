@@ -24,6 +24,7 @@ export default function Kiosk() {
   const [priority, setPriority] = useState(0);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [printStatus, setPrintStatus] = useState('idle');
   const [waitingCount, setWaitingCount] = useState(0);
   const { on } = useSocket();
 
@@ -39,20 +40,33 @@ export default function Kiosk() {
   }, [on]);
 
   useEffect(() => {
-    if (result) {
-      const timer = setTimeout(() => setResult(null), 3000);
+    if (result && printStatus === 'success') {
+      const timer = setTimeout(() => {
+        setResult(null);
+        setPrintStatus('idle');
+      }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [result]);
+  }, [result, printStatus]);
+
+  const handlePrintAgain = async () => {
+    if (!result?.id || printStatus === 'printing') return;
+    setPrintStatus('printing');
+    const r = await printTicket(result.id);
+    setPrintStatus(r?.success ? 'success' : 'failed');
+  };
 
   const handleTake = async (serviceId) => {
     if (loading) return;
     setLoading(true);
+    setPrintStatus('printing');
     try {
       const res = await api.takeQueue(serviceId, priority);
       setResult(res.data);
-      await printTicket(res.data.id);
+      const r = await printTicket(res.data.id);
+      setPrintStatus(r?.success ? 'success' : 'failed');
     } catch (err) {
+      setPrintStatus('failed');
       alert('Gagal mengambil nomor: ' + err.message);
     } finally {
       setLoading(false);
@@ -74,8 +88,26 @@ export default function Kiosk() {
               <p className="text-2xl">Antrian di depan: <span className="font-bold">{waitingCount}</span> orang</p>
             </div>
             <div className="mt-8 flex items-center justify-center gap-3">
-              <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-lg opacity-80">Tiket sedang dicetak...</p>
+              {printStatus === 'printing' && (
+                <>
+                  <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-lg opacity-80">Tiket sedang dicetak...</p>
+                </>
+              )}
+              {printStatus === 'success' && (
+                <p className="text-lg font-semibold">✓ Tiket berhasil dicetak</p>
+              )}
+              {printStatus === 'failed' && (
+                <div className="flex flex-col items-center gap-3">
+                  <p className="text-lg font-semibold">⚠ Cetak gagal. Coba lagi?</p>
+                  <button
+                    onClick={handlePrintAgain}
+                    className="px-6 py-3 bg-white text-[#0d9488] rounded-2xl font-bold shadow-lg hover:scale-105 transition-transform"
+                  >
+                    Cetak Ulang
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

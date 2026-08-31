@@ -1,4 +1,5 @@
 import { api } from './api';
+import { printHtmlViaIframe } from './printHtml';
 
 export async function printTicket(queueId) {
   try {
@@ -18,7 +19,7 @@ export async function printTicket(queueId) {
       });
     }
 
-    return { success: true, html };
+    return await printHtmlViaIframe(html);
   } catch (err) {
     console.error('Print failed:', err);
     return { success: false, error: err.message };
