@@ -20,7 +20,7 @@ services:
       - dokploy-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.antrian.rule=Host(`antrian.labklin.net`)"
+      - "traefik.http.routers.antrian.rule=Host(`antrian.labkesmas-kalsel.id`)"
       - "traefik.http.routers.antrian.entrypoints=websecure"
       - "traefik.http.routers.antrian.tls.certresolver=letsencrypt"
       - "traefik.http.services.antrian.loadbalancer.server.port=3001"
