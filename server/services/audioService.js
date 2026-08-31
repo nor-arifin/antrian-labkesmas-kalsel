@@ -6,10 +6,13 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const AUDIO_DIR = join(__dirname, '..', '..', 'public', 'audio');
 
+const INDONESIAN_WORDS = new Set(['Belas', 'Puluh', 'Ratus', 'Sebelas', 'Sepuluh', 'Seratus']);
+
 function getAudioUrl(name) {
   let relativePath;
   if (/^[A-Z]$/.test(name)) relativePath = `nomor/${name}.mp3`;
   else if (/^\d$/.test(name)) relativePath = `angka/${name}.mp3`;
+  else if (INDONESIAN_WORDS.has(name)) relativePath = `angka/${name}.mp3`;
   else relativePath = `${name}.mp3`;
 
   try {
@@ -18,6 +21,33 @@ function getAudioUrl(name) {
   } catch {
     return `/audio/${relativePath}`;
   }
+}
+
+function numberToTokens(n) {
+  if (n === 0) return [];
+  if (n === 10) return ['Sepuluh'];
+  if (n === 11) return ['Sebelas'];
+  if (n === 100) return ['Seratus'];
+
+  if (n < 10) return [String(n)];
+
+  if (n < 20) {
+    return [String(n - 10), 'Belas'];
+  }
+
+  if (n < 100) {
+    const tens = Math.floor(n / 10);
+    const ones = n % 10;
+    const result = [String(tens), 'Puluh'];
+    if (ones > 0) result.push(String(ones));
+    return result;
+  }
+
+  const hundreds = Math.floor(n / 100);
+  const rest = n % 100;
+  const result = hundreds === 1 ? ['Seratus'] : [String(hundreds), 'Ratus'];
+  if (rest > 0) result.push(...numberToTokens(rest));
+  return result;
 }
 
 export function buildAudioSequence(queue) {
@@ -35,8 +65,9 @@ export function buildAudioSequence(queue) {
   const prefix = queue.queue_number[0];
   sequence.push(prefix);
 
-  for (let i = 1; i < queue.queue_number.length; i++) {
-    sequence.push(queue.queue_number[i]);
+  const numericPart = parseInt(queue.queue_number.slice(1), 10);
+  if (!isNaN(numericPart) && numericPart > 0) {
+    sequence.push(...numberToTokens(numericPart));
   }
 
   sequence.push('diloket');
