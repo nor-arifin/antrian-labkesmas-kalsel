@@ -1,0 +1,973 @@
+================================================================================
+                    MANUAL BOOK - SISTEM ANTRIAN DIGITAL
+                         LABORATORIUM KESEHATAN
+                     PROVINSI KALIMANTAN SELATAN
+================================================================================
+
+Versi  : 1.0.0
+Tanggal: Agustus 2026
+Sistem : Antrian Digital Berbasis Web
+
+================================================================================
+                            DAFTAR ISI
+================================================================================
+
+BAB I    : PENDAHULUAN
+BAB II   : SISTEM AKSES & LOGIN (PIN GATE)
+BAB III  : KIOSK - Ambil Nomor Antrian
+BAB IV   : COUNTER - Panel Petugas Loket
+BAB V    : DISPLAY - Layar Antrian Publik
+BAB VI   : DASHBOARD - Panel Administrator
+BAB VII  : ALUR KERJA SISTEM (WORKFLOW)
+BAB VIII : SISTEM AUDIO & PENCETAKAN
+BAB IX   : SISTEM REAL-TIME (SOCKET.IO)
+BAB X    : RESET HARIAN & MAINTENANCE
+BAB XI   : TROUBLESHOOTING
+BAB XII  : LAMPIRAN
+
+================================================================================
+BAB I : PENDAHULUAN
+================================================================================
+
+1.1 OVERVIEW
+------------
+Sistem Antrian Digital adalah aplikasi berbasis web untuk mengelola antrian
+pengunjung di Laboratorium Kesehatan Provinsi Kalimantan Tengah. Sistem ini
+menggantikan antrian manual dengan nomor digital, pemanggilan otomatis via suara,
+dan dashboard monitoring real-time.
+
+1.2 TEKNOLOGI YANG DIGUNAKAN
+------------------------------
+- Backend     : Node.js 20 + Express.js
+- Real-time   : Socket.IO (WebSocket)
+- Database    : SQLite (WAL mode)
+- Frontend    : React 19 + Vite
+- Styling     : Tailwind CSS
+- Printer     : ESC/POS Thermal 80mm
+- Audio       : Web Audio API
+- Scheduler   : node-cron
+- Container   : Docker + Docker Compose
+
+1.3 PENGGUNA SISTEM
+---------------------
+| No | Pengunjung           | Perangkat           | Akses           |
+|----|----------------------|---------------------|-----------------|
+| 1  | Pengunjung           | Tablet/Touchscreen  | /kiosk          |
+| 2  | Petugas Loket        | PC/Laptop           | /counter/:id    |
+| 3  | TV Display Antrian   | TV/Layar Besar      | /display        |
+| 4  | Admin/Supervisor     | PC/Laptop           | /dashboard      |
+
+1.4 LAYANAN YANG TERSEDIA
+----------------------------
+| Prefix | Nama Layanan        | Warna   |
+|--------|---------------------|---------|
+| A      | Pendaftaran         | Biru    |
+| B      | Penunjang           | Hijau   |
+| C      | Konsultasi          | Kuning  |
+| D      | Pengambilan Hasil   | Merah   |
+
+1.5 LOKET YANG TERSEDIA
+--------------------------
+| ID | Nama Loket | Layanan    |
+|----|------------|------------|
+| 1  | Loket 1    | Pendaftaran|
+| 2  | Loket 2    | Penunjang  |
+| 3  | Loket 3    | Konsultasi |
+| 4  | Loket 4    | Pengambilan Hasil |
+
+================================================================================
+BAB II : SISTEM AKSES & LOGIN (PIN GATE)
+================================================================================
+
+2.1 PENJELASAN
+--------------
+Semua halaman aplikasi dilindungi oleh sistem PIN (PIN Gate). Pengguna harus
+memasukkan PIN yang benar sebelum dapat mengakses fitur aplikasi.
+
+2.2 ALAMAT AKSES
+-----------------
+Semua halaman: http://[IP_SERVER]/[halaman]
+Contoh: http://192.168.1.100/kiosk
+
+2.3 CARA LOGIN
+--------------
+1. Buka halaman yang diinginkan di browser
+2. Akan muncul halaman login dengan logo sistem
+3. Masukkan PIN akses (6 digit) pada kolom yang tersedia
+4. Klik tombol "Masuk"
+5. Jika PIN benar, Anda akan masuk ke halaman yang dituju
+6. PIN tersimpan di browser (localStorage) sehingga tidak perlu
+   login ulang selama PIN tidak diubah
+
+2.4 DEFAULT PIN
+---------------
+PIN default: 101010
+
+2.5 LOGOUT
+----------
+1. Klik tombol "PIN" di pojok kanan bawah layar
+2. Anda akan keluar dari sistem
+3. Harus login ulang untuk mengakses kembali
+
+2.6 GANTI PIN (HANYA ADMIN)
+-----------------------------
+1. Login ke Dashboard (/dashboard)
+2. Buka tab "Pengaturan"
+3. Scroll ke bagian "Ganti PIN Akses"
+4. Masukkan PIN baru (minimal 4 digit)
+5. Masukkan konfirmasi PIN
+6. Klik "Simpan PIN"
+
+================================================================================
+BAB III : KIOSK - Ambil Nomor Antrian
+================================================================================
+
+3.1 PENJELASAN
+--------------
+Kiosk adalah halaman yang digunakan oleh pengunjung untuk mengambil nomor
+antrian. Halaman ini dirancang untuk tablet atau touchscreen dengan antarmuka
+yang mudah digunakan.
+
+3.2 ALAMAT AKSES
+-----------------
+URL: http://[IP_SERVER]/kiosk
+Contoh: http://192.168.1.100/kiosk
+
+3.3 PERANGKAT
+--------------
+- Tablet Android/iPad
+- Touchscreen PC
+- Browser: Chrome, Firefox, Safari, Edge
+
+3.4 TAMPILAN HALAMAN
+---------------------
+Halaman Kiosk memiliki 3 bagian utama:
+1. Header: Logo + Nama Laboratorium
+2. Pilihan Layanan: 4 tombol besar (A, B, C, D)
+3. Pilihan Prioritas: Normal, Lansia, Ibu Hamil, Cito
+
+3.5 CARA MENGAMBIL NOMOR ANTRIAN
+----------------------------------
+
+LANGKAH 1: Pilih Jenis Layanan
+   - Tekan salah satu tombol layanan yang tersedia:
+     * A - Pendaftaran (Biru)
+     * B - Penunjang (Hijau)
+     * C - Konsultasi (Kuning)
+     * D - Pengambilan Hasil (Merah)
+
+LANGKAH 2: Pilih Prioritas (Opsional)
+   - Secara default: Normal
+   - Jika pengunjung prioritas, tekan tombol prioritas:
+     * Lansia (tekan tombol Lansia)
+     * Ibu Hamil (tekan tombol Ibu Hamil)
+     * Cito/Cepat (tekan tombol Cito)
+   - Tombol yang aktif akan berwarna putih
+
+LANGKAH 3: Konfirmasi
+   - Setelah memilih layanan, popup konfirmasi akan muncul
+   - Tampilkan nomor antrian yang didapat
+   - Tampilkan jumlah antrian di depan
+   - Tunggu tiket tercetak
+
+3.6 PROSES PENCETAKAN
+-----------------------
+1. Sistem menghasilkan nomor antrian (contoh: A001)
+2. Backend mengirim data ke printer thermal
+3. Tiket tercetak dengan format:
+   - Header: Nama Laboratorium
+   - Nomor Antrian (besar)
+   - Jenis Layanan
+   - Status Prioritas
+   - Estimasi jumlah antrian di depan
+   - Tanggal dan waktu
+
+3.7 KETERANGAN NOMOR ANTRIAN
+------------------------------
+Format: [Prefix][Nomor Urut 3 digit]
+Contoh: A001, A002, B001, C015, D003
+
+- Prefix ditentukan oleh jenis layanan
+- Nomor urut dimulai dari 001 setiap hari
+- Reset otomatis setiap hari jam 23:00
+
+3.8 PRIORITAS
+--------------
+| Kode | Prioritas | Keterangan                    |
+|------|-----------|-------------------------------|
+| 0    | Normal    | Antrian biasa                 |
+| 1    | Lansia    | Prioritas untuk lansia        |
+| 2    | Ibu Hamil | Prioritas untuk ibu hamil     |
+| 3    | Cito      | Prioritas mendesak/darurat    |
+
+Antrian prioritas akan dipanggil lebih dulu dari antrian normal.
+
+================================================================================
+BAB IV : COUNTER - Panel Petugas Loket
+================================================================================
+
+4.1 PENJELASAN
+--------------
+Counter adalah halaman yang digunakan oleh petugas loket untuk memanggil,
+melayani, dan menyelesaikan antrian pengunjung.
+
+4.2 ALAMAT AKSES
+-----------------
+URL: http://[IP_SERVER]/counter/[ID_LOKET]
+Contoh:
+- Loket 1: http://192.168.1.100/counter/1
+- Loket 2: http://192.168.1.100/counter/2
+- Loket 3: http://192.168.1.100/counter/3
+- Loket 4: http://192.168.1.100/counter/4
+
+4.3 PERANGKAT
+--------------
+- PC/Laptop
+- Browser: Chrome, Firefox, Edge
+- Speaker (untuk audio panggilan)
+
+4.4 TAMPILAN HALAMAN
+---------------------
+Halaman Counter memiliki 3 bagian utama:
+1. Header: Nama Loket + Status (Aktif/Istirahat)
+2. Nomor Saat Ini: Nomor yang sedang dilayani
+3. Nomor Berikutnya: Nomor antrian selanjutnya
+4. Tombol Aksi: Panggil, Mulai, Selesai, Lewati, Istirahat
+5. Riwayat: Daftar 10 antrian terakhir yang dilayani
+
+4.5 CARA MEMANGGIL ANTRIAN
+-----------------------------
+
+LANGKAH 1: Tekan Tombol "PANGGIL"
+   - Sistem akan mengambil nomor antrian berikutnya
+   - Prioritas (Lansia/Hamil/Cito) dipanggil lebih dulu
+   - Nomor akan ditampilkan di layar Display (TV)
+   - Audio panggilan akan diputar otomatis
+
+LANGKAH 2: Tunggu Pengunjung Datang
+   - Nomor akan berkedip di layar Display
+   - Audio: "Nomor A001 di Loket 1"
+   - Jika pengunjung tidak datang, bisa tekan "PANGGIL ULANG"
+
+LANGKAH 3: Mulai Melayani
+   - Tekan tombol "MULAI" saat pengunjung mulai dilayani
+   - Timer akan mulai menghitung durasi layanan
+   - Status berubah menjadi "Serving"
+
+LANGKAH 4: Selesai Melayani
+   - Tekan tombol "SELESAI" setelah layanan selesai
+   - Nomor akan masuk ke riwayat
+   - Nomor berikutnya akan muncul
+
+4.6 TOMBOL AKSI
+-----------------
+
+| Tombol        | Fungsi                                    | Keterangan                    |
+|---------------|-------------------------------------------|-------------------------------|
+| PANGGIL       | Memanggil nomor berikutnya                | Hanya aktif jika tidak ada    |
+|               |                                           | nomor yang sedang dilayani    |
+| PANGGIL ULANG | Memanggil ulang nomor yang sama           | Hanya aktif saat status       |
+|               |                                           | "Calling"                     |
+| MULAI         | Mulai melayani pengunjung                 | Memulai timer durasi layanan  |
+| SELESAI       | Menyelesaikan layanan                     | Mengakhiri layanan            |
+| LEWATI        | Melewati antrian (skip)                   | Nomor tidak dilayani          |
+| ISTIRAHAT     | Toggle status loket (Aktif/Istirahat)     | Menonaktifkan loket sementara|
+
+4.7 STATUS LOKET
+------------------
+| Status    | Keterangan                               |
+|-----------|------------------------------------------|
+| Active    | Loket aktif melayani antrian             |
+| Break     | Loket dalam istirahat, tidak melayani    |
+
+Saat status "Break":
+- Tombol PANGGIL dinonaktifkan
+- Tampilan berubah menjadi kuning
+- Display (TV) menampilkan "ISTIRAHAT"
+
+4.8 RIWAYAT ANTRIAN
+---------------------
+- Menampilkan 10 antrian terakhir yang sudah dilayani hari ini
+- Informasi yang ditampilkan:
+  * Nomor antrian
+  * Status: Selesai/Lewati
+  * Durasi layanan (menit)
+
+4.9 AUDIO PANGGILAN
+---------------------
+Saat tombol PANGGIL ditekan, sistem akan memutar audio:
+- Normal: "Nomor A001 di Loket 1"
+- Lansia: "Prioritas. Nomor A001 di Loket 1"
+- Ibu Hamil: "Prioritas. Nomor A001 di Loket 1"
+- Cito: "Cito. Nomor A001 di Loket 1"
+
+Audio diputar di SEMUA browser yang terhubung (termasuk Display).
+
+================================================================================
+BAB V : DISPLAY - Layar Antrian Publik
+================================================================================
+
+5.1 PENJELASAN
+--------------
+Display adalah halaman yang ditampilkan di TV atau layar besar untuk
+menampilkan informasi antrian kepada pengunjung.
+
+5.2 ALAMAT AKSES
+-----------------
+URL: http://[IP_SERVER]/display
+Contoh: http://192.168.1.100/display
+
+5.3 PERANGKAT
+--------------
+- TV LED/LCD besar
+- Monitor LCD
+- Projector
+- Browser: Chrome, Firefox
+
+5.4 TAMPILAN HALAMAN
+---------------------
+Halaman Display memiliki 4 bagian utama:
+
+1. HEADER:
+   - Logo + Nama Laboratorium
+   - Judul "Sistem Antrian Digital"
+
+2. AREA PANGGILAN (Besar, Orange):
+   - Menampilkan nomor yang sedang dipanggil
+   - Contoh: "A001 - SILAKAN KE LOKET 1"
+   - Berkedip saat baru dipanggil
+
+3. GRID LOKET (4 kolom):
+   - Status setiap loket aktif
+   - Nomor yang sedang dilayani per loket
+   - Status "ISTIRAHAT" jika loket break
+
+4. DAFTAR ANTRIAN MENUNGGU:
+   - Daftar nomor yang masih menunggu
+   - Ditampilkan dalam bentuk chip/kotak kecil
+   - Prioritas ditandai dengan warna kuning
+
+5. RUNNING TEXT (Marquee):
+   - Teks berjalan di bagian bawah layar
+   - Bisa dikonfigurasi dari Dashboard
+
+6. FOOTER:
+   - Total antrian hari ini
+   - Jumlah selesai
+   - Rata-rata waktu tunggu
+
+5.5 AKTIFKAN SUARA
+--------------------
+1. Saat pertama kali membuka Display, akan muncul popup
+2. Klik di mana saja pada layar untuk mengaktifkan suara
+3. Suara panggilan akan diputar saat ada nomor baru
+4. Jika tidak diaktifkan, suara tidak akan diputar
+
+5.6 FITUR VIDEO (OPSIONAL)
+----------------------------
+- Display bisa menampilkan video di sebelah kanan nomor panggilan
+- Video dikonfigurasi dari Dashboard (tab Pengaturan)
+- Format video: MP4
+- Ukuran maksimal: 20MB
+
+5.7 REAL-TIME UPDATE
+----------------------
+Display akan otomatis update saat:
+- Nomor baru diambil (Kiosk)
+- Nomor dipanggil (Counter)
+- Nomor selesai dilayani (Counter)
+- Status loket berubah (Counter)
+- Settings diubah (Dashboard)
+- Reset harian dilakukan
+
+================================================================================
+BAB VI : DASHBOARD - Panel Administrator
+================================================================================
+
+6.1 PENJELASAN
+--------------
+Dashboard adalah halaman admin untuk monitoring, pengaturan, dan laporan
+sistem antrian.
+
+6.2 ALAMAT AKSES
+-----------------
+URL: http://[IP_SERVER]/dashboard
+Contoh: http://192.168.1.100/dashboard
+
+6.3 PERANGKAT
+--------------
+- PC/Laptop
+- Browser: Chrome, Firefox, Edge
+
+6.4 TAMPILAN HALAMAN
+---------------------
+Dashboard memiliki 5 tab utama:
+
+| Tab        | Ikon | Fungsi                                    |
+|------------|------|-------------------------------------------|
+| Monitor    | 📊   | Monitoring real-time antrian              |
+| Layanan    | 🏥   | CRUD jenis layanan                        |
+| Loket      | 🖥️   | CRUD loket/kounter                        |
+| Laporan    | 📈   | Laporan harian/mingguan/bulanan          |
+| Pengaturan | ⚙️   | Pengaturan sistem                         |
+
+6.5 TAB MONITOR
+----------------
+Menampilkan statistik real-time:
+
+1. Kartu Statistik:
+   - Total Hari Ini: Jumlah antrian hari ini
+   - Menunggu: Jumlah antrian menunggu
+   - Dilayani: Jumlah antrian sedang dilayani
+   - Selesai: Jumlah antrian selesai
+
+2. Tabel Antrian Aktif:
+   - Daftar semua antrian yang masih aktif
+   - Kolom: Nomor, Layanan, Status, Prioritas, Loket, Waktu
+   - Filter berdasarkan status
+   - Update real-time via Socket.IO
+
+3. Tombol "Reset Antrian":
+   - Reset semua antrian yang masih menunggu/dipanggil
+   - Konfirmasi diperlukan sebelum reset
+
+6.6 TAB LAYANAN
+----------------
+Manajemen jenis layanan:
+
+1. Form Tambah Layanan:
+   - Nama Layanan (wajib)
+   - Prefix: 1 huruf (wajib, unik)
+   - Warna (color picker)
+   - Klik "Tambah"
+
+2. Daftar Layanan:
+   - Menampilkan semua layanan yang ada
+   - Status: Aktif/Nonaktif
+   - Tombol Edit (✏️)
+   - Tombol Hapus (🗑️)
+
+3. Edit Layanan:
+   - Klik tombol Edit (✏️)
+   - Ubah data yang diperlukan
+   - Centang/centang untuk status Aktif/Nonaktif
+   - Klik "Simpan"
+
+4. Hapus Layanan:
+   - Klik tombol Hapus (🗑️)
+   - Konfirmasi akan muncul
+   - Klik "OK" untuk menghapus
+
+6.7 TAB LOKET
+--------------
+Manajemen loket/kounter:
+
+1. Form Tambah Loket:
+   - Nama Loket (wajib)
+   - Pilih Layanan (wajib)
+   - Klik "Tambah"
+
+2. Daftar Loket:
+   - Menampilkan semua loket yang ada
+   - Nama loket + layanan yang dilayani
+   - Tombol Edit (✏️)
+   - Tombol Hapus (🗑️)
+
+3. Edit Loket:
+   - Klik tombol Edit (✏️)
+   - Ubah nama loket atau layanan
+   - Centang/centang untuk status Aktif/Nonaktif
+   - Klik "Simpan"
+
+4. Hapus Loket:
+   - Klik tombol Hapus (🗑️)
+   - Konfirmasi akan muncul
+   - Klik "OK" untuk menghapus
+
+6.8 TAB LAPORAN
+----------------
+Laporan antrian dengan 3 jenis:
+
+1. Laporan Harian:
+   - Pilih tanggal pada date picker
+   - Klik "Tampilkan"
+   - Menampilkan:
+     * Ringkasan: Total, Selesai, Dibatalkan, Rata-rata tunggu
+     * Per Layanan: Total, Selesai, Rata-rata tunggu per layanan
+     * Per Loket: Total, Selesai, Durasi layanan, Tunggu dipanggil
+   - Klik "Lihat Detail per Antrian" untuk detail lengkap
+
+2. Laporan Mingguan:
+   - Pilih tanggal awal (7 hari terakhir secara default)
+   - Menampilkan data per hari dalam rentang waktu
+
+3. Laporan Bulanan:
+   - Pilih bulan dan tahun
+   - Menampilkan data per hari dalam bulan tersebut
+
+6.9 TAB PENGATURAN
+--------------------
+Pengaturan sistem:
+
+1. Running Text:
+   - Teks yang ditampilkan di bagian bawah layar Display
+   - Masukkan teks yang diinginkan
+   - Klik "Simpan"
+
+2. Video Display:
+   - Toggle untuk menampilkan/menyembunyikan video
+   - Upload video MP4 (maks 20MB)
+   - Ganti video atau hapus video
+
+3. Ganti PIN Akses:
+   - Masukkan PIN baru (minimal 4 digit)
+   - Konfirmasi PIN baru
+   - Klik "Simpan PIN"
+
+================================================================================
+BAB VII : ALUR KERJA SISTEM (WORKFLOW)
+================================================================================
+
+7.1 ALUR MENGAMBIL NOMOR (PENGGUNA)
+--------------------------------------
+
+  +--------+      +---------+      +----------+      +---------+
+  | KIOSK  | ----> | BACKEND | ----> | DATABASE | ----> | PRINTER |
+  +--------+      +---------+      +----------+      +---------+
+       |                               |
+       | 1. Pilih Layanan              |
+       | 2. Toggle Prioritas           |
+       | 3. Tekan "Ambil Nomor"        |
+       |                               |
+       |         +---------+           |
+       |-------->| SOCKET  |-----------+
+       |         |   .IO   |
+       |         +---------+
+       |              |
+       |              v
+       |         +---------+
+       |         | DISPLAY |
+       |         |   (TV)  |
+       |         +---------+
+       |                               |
+       v                               |
+    +---------+                        |
+    | TIKET   |<-----------------------+
+    | TERCETAK|
+    +---------+
+
+  Detail Alur:
+  1. Pengunjung membuka /kiosk di tablet
+  2. Memilih jenis layanan (Pendaftaran/Penunjang/Konsultasi/Pengambilan Hasil)
+  3. Mengaktifkan toggle prioritas jika perlu (Lansia/Ibu Hamil)
+  4. Menekan tombol layanan → POST /api/queue/take
+  5. Backend generate nomor antrian (A001, B003, dst)
+  6. Backend simpan ke database (status: waiting)
+  7. Backend emit socket queue:created ke semua client
+  8. Display (TV) update tampilan
+  9. Kiosk cetak tiket via thermal printer
+  10. Tiket tercetak dengan auto-cutter
+
+7.2 ALUR MEMANGGIL ANTRIAN (PETUGAS)
+----------------------------------------
+
+  +---------+      +---------+      +----------+
+  | COUNTER | ----> | BACKEND | ----> | DATABASE |
+  |   (PC)  |      |         |      |          |
+  +---------+      +---------+      +----------+
+       |                |                |
+       | 1. Tekan       |                |
+       |   "Panggil"    |                |
+       |                v                |
+       |         +---------+            |
+       |         | SOCKET  |------------+
+       |         |   .IO   |
+       |         +---------+
+       |              |
+       |              v
+       |         +---------+
+       |         | DISPLAY |
+       |         |   (TV)  |
+       |         +---------+
+       |              |
+       |         +---------+
+       |         |  AUDIO  |
+       |         | Playback |
+       |         +---------+
+       |                               |
+       v                               |
+    +---------+                        |
+    | NOMOR   |<-----------------------+
+    | BERIKUT |
+    +---------+
+
+  Detail Alur:
+  1. Petugas membuka /counter/:id di PC
+  2. Menekan tombol "Panggil" (Next)
+  3. Backend query antrian berikutnya (prioritas dulu)
+  4. Backend update status → calling
+  5. Backend update counter.current_queue_id
+  6. Backend emit socket queue:calling + counter:updated
+  7. Semua client menerima event
+  8. Display (TV) update nomor yang dipanggil
+  9. Semua browser putar audio: "Nomor A001 di Loket 1"
+  10. Petugas melayani → tekan "Selesai"
+  11. Backend update status → done
+
+7.3 ALUR RESET HARIAN (JAM 23:00)
+------------------------------------
+
+  +---------+      +---------+      +----------+
+  |  CRON   | ----> | BACKEND | ----> | DATABASE |
+  | (23:00) |      |         |      |          |
+  +---------+      +---------+      +----------+
+                         |                |
+                         | 1. Cancel      |
+                         |    waiting &   |
+                         |    calling     |
+                         |                |
+                         | 2. Clear       |
+                         |    counter     |
+                         |    current     |
+                         |                |
+                         | 3. Emit        |
+                         |    socket      |
+                         |    event       |
+                         v                |
+                  +---------+            |
+                  | SOCKET  |------------+
+                  |   .IO   |
+                  +---------+
+                         |
+                         v
+                  +---------+
+                  | SEMUA   |
+                  | CLIENT  |
+                  | (reset) |
+                  +---------+
+
+  Detail Alur:
+  1. node-cron trigger jam 23:00
+  2. UPDATE queues SET status = 'cancelled' WHERE status IN ('waiting', 'calling')
+  3. UPDATE counters SET current_queue_id = NULL
+  4. Emit socket system:reset
+  5. Semua client (Display, Counter, Dashboard) reset tampilan
+  6. Kiosk siap untuk antrian hari berikutnya
+
+================================================================================
+BAB VIII : SISTEM AUDIO & PENCETAKAN
+================================================================================
+
+8.1 SISTEM AUDIO
+------------------
+Audio diputar menggunakan Web Audio API di browser.
+
+Urutan audio saat pemanggilan:
+1. alert.mp3        → Notifikasi awal ("Ting")
+2. nomor.mp3        → Kata "Nomor"
+3. [prefix].mp3     → Huruf layanan (A/B/C/D)
+4. [angka].mp3       → Setiap digit nomor
+5. diloket.mp3      → Kata "di Loket"
+6. [angka].mp3       → Nomor loket
+
+Contoh: "Nomor A001 di Loket 1"
+Audio: alert → nomor → A → 0 → 0 → 1 → diloket → 1
+
+File audio tersimpan di: public/audio/
+- alert.mp3
+- nomor.mp3
+- diloket.mp3
+- lansia.mp3 (Prioritas Lansia)
+- hamil.mp3 (Prioritas Ibu Hamil)
+- cito.mp3 (Prioritas Cito)
+- nomor/A.mp3, B.mp3, C.mp3, D.mp3
+- angka/0.mp3, 1.mp3, 2.mp3, ..., 9.mp3
+
+8.2 SISTEM PENCETAKAN (ESC/POS)
+----------------------------------
+Printer thermal 80mm menggunakan protokol ESC/POS.
+
+Format tiket:
++----------------------------------+
+|                                  |
+|  LAB. KESEHATAN PROV. KALTENG   |  ← center, bold
+|  ═══════════════════════════════  |  ← horizontal rule
+|                                  |
+|      Nomor: A001                 |  ← center, large
+|                                  |
+|  Layanan: Pendaftaran            |  ← left
+|  Prioritas: Tidak                |  ← left
+|                                  |
+|  Antrian di depan: 5 orang       |  ← left
+|  Estimasi tunggu: ~15 menit      |  ← left
+|                                  |
+|  ═══════════════════════════════  |
+|  10/08/2026  09:15:32            |  ← center
+|                                  |
++----------------------------------+
+         |
+         v
+    Auto-cutter
+
+Printer terhubung via USB ke server/PC.
+
+================================================================================
+BAB IX : SISTEM REAL-TIME (SOCKET.IO)
+================================================================================
+
+9.1 PENJELASAN
+--------------
+Semua komunikasi antara client dan server menggunakan Socket.IO untuk
+update real-time tanpa perlu refresh halaman.
+
+9.2 EVENT YANG DIGUNAKAN
+--------------------------
+
+| Event            | Emit Ke      | Keterangan                    |
+|------------------|--------------|-------------------------------|
+| queue:created    | Semua Client | Nomor baru diambil             |
+| queue:calling    | Semua Client | Nomor dipanggil                |
+| queue:updated    | Semua Client | Status antrian berubah         |
+| counter:updated  | Semua Client | Status loket berubah           |
+| stats:updated    | Dashboard    | Statistik berubah              |
+| system:reset     | Semua Client | Reset harian dilakukan         |
+| settings:updated | Semua Client | Pengaturan diubah              |
+
+9.3 ALUR EVENT
+----------------
+
+Kiosk Ambil Nomor:
+  Kiosk → POST /api/queue/take → Server emit queue:created
+                                        │
+                                        ├──▶ Display (update daftar)
+                                        ├──▶ Counter (update daftar)
+                                        └──▶ Dashboard (update stats)
+
+Counter Panggil:
+  Counter → PUT /api/queue/:id/status → Server emit queue:calling
+                                              │
+                                              ├──▶ Display (update nomor + audio)
+                                              ├──▶ Semua Client (update)
+                                              └──▶ Dashboard (update stats)
+
+Counter Selesai:
+  Counter → PUT /api/queue/:id/status → Server emit queue:updated
+                                              │
+                                              ├──▶ Display (update)
+                                              └──▶ Dashboard (update stats)
+
+================================================================================
+BAB X : RESET HARIAN & MAINTENANCE
+================================================================================
+
+10.1 RESET OTOMATIS
+---------------------
+- Sistem melakukan reset otomatis setiap hari jam 23:00 WIB
+- Semua antrian dengan status "waiting" dan "calling" di-cancel
+- Counter current_queue_id di-clear
+- Semua client menerima event system:reset
+
+10.2 RESET MANUAL
+-------------------
+1. Login ke Dashboard (/dashboard)
+2. Klik tombol "Reset Antrian" di header (merah)
+3. Konfirmasi akan muncul
+4. Klik "OK" untuk mereset
+5. Semua antrian aktif akan di-cancel
+
+10.3 BACKUP DATABASE
+----------------------
+Database SQLite tersimpan di: data/antrian.db
+
+Backup manual:
+1. Copy file data/antrian.db ke lokasi aman
+2. Restore dengan mengganti file di lokasi yang sama
+
+10.4 UPDATE SISTEM
+--------------------
+1. Pull code terbaru dari repository
+2. Jalankan: npm install
+3. Jalankan: npm run build
+4. Restart container: docker compose restart backend
+
+================================================================================
+BAB XI : TROUBLESHOOTING
+================================================================================
+
+11.1 MASALAH UMUM
+-------------------
+
+| Masalah                          | Solusi                                |
+|----------------------------------|---------------------------------------|
+| Tidak bisa akses halaman         | Cek koneksi jaringan, restart browser |
+| PIN salah                        | Hubungi admin untuk reset PIN         |
+| Nomor tidak tercetak             | Cek koneksi printer, restart printer  |
+| Audio tidak bunyi                | Klik layar Display untuk enable audio |
+| Display tidak update             | Refresh halaman, cek koneksi internet |
+| Counter tidak bisa panggil       | Cek apakah ada antrian waiting        |
+| Database error                   | Restart backend service               |
+
+11.2 CEK STATUS LAYANAN
+--------------------------
+
+Cek apakah backend berjalan:
+  curl http://localhost:3001/api/queue/stats
+
+Cek apakah database accessible:
+  curl http://localhost:3001/api/service
+
+11.3 RESTART LAYANAN
+-----------------------
+
+Development:
+  npm run dev
+
+Production (Docker):
+  docker compose restart
+
+11.4 CEK LOG
+---------------
+
+Backend log:
+  docker compose logs -f backend
+
+Nginx log:
+  docker compose logs -f nginx
+
+================================================================================
+BAB XII : LAMPIRAN
+================================================================================
+
+12.1 API ENDPOINTS
+--------------------
+
+Queue:
+  POST   /api/queue/take           → Ambil nomor antrian
+  GET    /api/queue/active         → Daftar antrian aktif
+  GET    /api/queue/stats          → Statistik hari ini
+  GET    /api/queue/next/:id       → Panggil nomor berikutnya
+  PUT    /api/queue/:id/status     → Update status antrian
+  PUT    /api/queue/:id/recall     → Panggil ulang
+  GET    /api/queue/history/:id    → Riwayat antrian per loket
+
+Service:
+  GET    /api/service              → Daftar layanan
+  POST   /api/service              → Tambah layanan
+  PUT    /api/service/:id          → Update layanan
+  DELETE /api/service/:id          → Hapus layanan
+
+Counter:
+  GET    /api/counter              → Daftar loket
+  POST   /api/counter              → Tambah loket
+  PUT    /api/counter/:id          → Update loket
+  DELETE /api/counter/:id          → Hapus loket
+  PUT    /api/counter/:id/break    → Toggle istirahat
+
+Report:
+  GET    /api/report/daily         → Laporan harian
+  GET    /api/report/daily-detail  → Detail laporan harian
+  GET    /api/report/weekly        → Laporan mingguan
+  GET    /api/report/monthly       → Laporan bulanan
+
+Settings:
+  GET    /api/settings             → Ambil pengaturan
+  PUT    /api/settings             → Update pengaturan
+  POST   /api/settings/video       → Upload video
+  DELETE /api/settings/video       → Hapus video
+
+Reset:
+  POST   /api/reset                → Reset antrian
+
+12.2 CONTOH REQUEST/RESPONSE
+-------------------------------
+
+Ambil Nomor Antrian:
+  POST /api/queue/take
+  Body: { "serviceId": 1, "priority": 0 }
+
+  Response:
+  {
+    "data": {
+      "id": 1,
+      "queue_number": "A001",
+      "service_id": 1,
+      "status": "waiting",
+      "priority": 0,
+      "created_at": "2026-08-10T09:15:32"
+    }
+  }
+
+Panggil Antrian:
+  GET /api/queue/next/1
+
+  Response:
+  {
+    "data": {
+      "id": 1,
+      "queue_number": "A001",
+      "status": "calling",
+      "counter_id": 1
+    },
+    "audio": ["/audio/alert.mp3", "/audio/nomor.mp3", ...]
+  }
+
+12.3 FILE STRUCTURE
+---------------------
+
+ANTRIAN/
+├── data/
+│   └── antrian.db           ← Database SQLite
+├── public/
+│   ├── audio/               ← File audio
+│   │   ├── alert.mp3
+│   │   ├── nomor.mp3
+│   │   ├── diloket.mp3
+│   │   ├── lansia.mp3
+│   │   ├── hamil.mp3
+│   │   ├── nomor/
+│   │   │   ├── A.mp3
+│   │   │   ├── B.mp3
+│   │   │   └── ...
+│   │   └── angka/
+│   │       ├── 0.mp3
+│   │       └── ...
+│   └── videos/              ← Video display
+├── server/
+│   ├── index.js             ← Entry point
+│   ├── db/                  ← Database
+│   ├── routes/              ← API routes
+│   ├── services/            ← Business logic
+│   └── socket/              ← Socket.IO handlers
+├── src/
+│   ├── pages/               ← Halaman React
+│   │   ├── Kiosk.jsx
+│   │   ├── Counter.jsx
+│   │   ├── Display.jsx
+│   │   └── Dashboard.jsx
+│   ├── components/          ← Komponen UI
+│   ├── hooks/               ← Custom hooks
+│   └── lib/                 ← Utilities
+├── docker-compose.yml       ← Docker config
+├── nginx/                   ← Nginx config
+└── .env                     ← Environment variables
+
+12.4 ENVIRONMENT VARIABLES
+----------------------------
+
+File: .env
+
+  PORT=3001
+  NODE_ENV=production
+  DB_PATH=./data/antrian.db
+  CRON_RESET_HOUR=23
+
+================================================================================
+                         AKHIR MANUAL BOOK
+================================================================================
+
+Dokumen ini dibuat berdasarkan kode sumber Sistem Antrian Digital
+Laboratorium Kesehatan Provinsi Kalimantan Tengah.
+
+Untuk bantuan teknis, hubungi administrator sistem.
+
+================================================================================

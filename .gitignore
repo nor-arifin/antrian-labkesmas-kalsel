@@ -12,3 +12,10 @@ public/images/
 public/videos/
 .rtk/
 CLAUDE.md
+
+# Electron packaging
+electron/node_modules/
+electron/release/
+electron/server.bundle.cjs
+electron/dist/
+electron/public/

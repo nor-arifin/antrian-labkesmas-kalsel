@@ -1,0 +1,44 @@
+name: Build Windows Installer
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install root deps
+        run: npm ci
+
+      - name: Build frontend (vite)
+        run: npm run build
+
+      - name: Bundle server (esbuild)
+        run: node scripts/prepare-electron.mjs
+
+      - name: Install electron deps
+        working-directory: electron
+        run: npm ci
+
+      - name: Build NSIS installer
+        working-directory: electron
+        run: npm run dist
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: antrian-kiosk-installer
+          path: electron/release/*.exe
+          if-no-files-found: error

@@ -1,12 +1,70 @@
 {
   "name": "antrian-kiosk",
   "version": "1.0.0",
-  "description": "Antrian Labkesprov Kalsel - Kiosk Mode",
+  "description": "Antrian Labkesprov Kalsel - Kiosk Mode (installer Windows)",
   "main": "main.js",
+  "author": "Labkesda Kalsel",
+  "license": "MIT",
   "scripts": {
-    "start": "electron ."
+    "start": "node ../scripts/prepare-electron.mjs && electron .",
+    "dist": "node ../scripts/prepare-electron.mjs && electron-builder --win"
+  },
+  "dependencies": {
+    "pdfkit": "^0.15.0",
+    "sql.js": "^1.11.0"
   },
   "devDependencies": {
-    "electron": "22.3.27"
+    "electron": "22.3.27",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "id.labkes.kalsel.antrian",
+    "productName": "Antrian Labkesda Kalsel Kiosk",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "server.bundle.cjs",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../dist",
+        "to": "app-dist"
+      },
+      {
+        "from": "../public",
+        "to": "app-public"
+      },
+      {
+        "from": "../node_modules/sql.js/dist/sql-wasm.wasm",
+        "to": "sql-wasm.wasm"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Antrian Kiosk",
+      "artifactName": "${productName}-Setup-${version}-${arch}.${ext}"
+    }
+  },
+  "allowScripts": {
+    "electron@22.3.27": true
   }
 }

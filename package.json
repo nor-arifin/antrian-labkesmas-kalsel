@@ -11,10 +11,9 @@
     "preview": "vite preview",
     "start": "NODE_ENV=production node server/index.js",
     "setup": "node server/db/schema.js && node server/db/seed.js",
-    "kiosk": "concurrently -k -n server,client,electron -c blue,green,magenta \"node server/index.js\" \"vite\" \"wait-on http://localhost:3080 && cd electron && electron .\"",
-    "kiosk:server": "node server/index.js",
-    "kiosk:client": "vite",
-    "kiosk:electron": "wait-on http://localhost:3080 && cd electron && electron ."
+    "build:electron": "npm run build && node scripts/prepare-electron.mjs",
+    "dist:win": "npm run build:electron && cd electron && npx electron-builder --win",
+    "kiosk": "node scripts/prepare-electron.mjs && cd electron && electron ."
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -32,6 +31,7 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.0",
     "concurrently": "^9.1.0",
+    "esbuild": "^0.25.12",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.1.0",

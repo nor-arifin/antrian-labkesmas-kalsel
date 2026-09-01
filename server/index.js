@@ -15,8 +15,9 @@ import settingsRoutes from './routes/settings.js';
 import { setupSocket } from './socket/handlers.js';
 import { startScheduler } from './services/scheduler.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = typeof globalThis.__dirname !== 'undefined'
+  ? globalThis.__dirname
+  : dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const server = createServer(app);
@@ -29,12 +30,16 @@ app.use(express.json());
 
 const isProd = process.env.NODE_ENV === 'production';
 
-app.use('/audio', express.static(join(__dirname, '..', 'public', 'audio')));
-app.use('/logo', express.static(join(__dirname, '..', 'public', 'logo'), { maxAge: '1d' }));
-app.use('/videos', express.static(join(__dirname, '..', 'public', 'videos'), { maxAge: '1h' }));
+const publicDir = process.env.PUBLIC_DIR || join(__dirname, '..', 'public');
+const videoDir = process.env.VIDEO_DIR || join(publicDir, 'videos');
+const staticDir = process.env.STATIC_DIR || join(__dirname, '..', 'public', 'static');
+
+app.use('/audio', express.static(join(publicDir, 'audio')));
+app.use('/logo', express.static(join(publicDir, 'logo'), { maxAge: '1d' }));
+app.use('/videos', express.static(videoDir, { maxAge: '1h' }));
 
 if (isProd) {
-  app.use(express.static(join(__dirname, '..', 'public', 'static')));
+  app.use(express.static(staticDir));
 }
 
 app.use('/api', queueRoutes(io));
@@ -45,14 +50,19 @@ app.use('/api', printRoutes(io));
 app.use('/api', settingsRoutes(io));
 
 if (isProd) {
+  app.get('/sw.js', (req, res) => {
+    res.set('Cache-Control', 'no-cache');
+    res.sendFile(join(staticDir, 'sw.js'));
+  });
+
   app.get('*', (req, res) => {
-    res.sendFile(join(__dirname, '..', 'public', 'static', 'index.html'));
+    res.sendFile(join(staticDir, 'index.html'));
   });
 }
 
 setupSocket(io);
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT === '0' ? 0 : (process.env.PORT || 3001);
 
 async function start() {
   await initDB();
@@ -60,7 +70,7 @@ async function start() {
   startScheduler(io);
 
   server.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Server running on port ${server.address().port}`);
   });
 }
 
@@ -68,3 +78,5 @@ start().catch(err => {
   console.error('Failed to start server:', err);
   process.exit(1);
 });
+
+export { server, app };

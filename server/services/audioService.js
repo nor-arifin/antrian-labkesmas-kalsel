@@ -3,7 +3,9 @@ import { statSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const __dirname = typeof globalThis.__dirname !== 'undefined'
+  ? globalThis.__dirname
+  : dirname(fileURLToPath(import.meta.url));
 const AUDIO_DIR = join(__dirname, '..', '..', 'public', 'audio');
 
 const INDONESIAN_WORDS = new Set(['Belas', 'Puluh', 'Ratus', 'Sebelas', 'Sepuluh', 'Seratus']);

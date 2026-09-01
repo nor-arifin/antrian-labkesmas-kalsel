@@ -3,8 +3,16 @@ import { getDb } from '../db/connection.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-const VIDEO_DIR = '/app/public/videos';
+const __dirname = typeof globalThis.__dirname !== 'undefined'
+  ? globalThis.__dirname
+  : dirname(fileURLToPath(import.meta.url));
+
+const VIDEO_DIR = process.env.VIDEO_DIR || join(__dirname, '..', '..', 'public', 'videos');
+
+fs.mkdirSync(VIDEO_DIR, { recursive: true });
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, VIDEO_DIR),

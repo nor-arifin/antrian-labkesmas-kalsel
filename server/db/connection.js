@@ -3,8 +3,9 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = typeof globalThis.__dirname !== 'undefined'
+  ? globalThis.__dirname
+  : dirname(fileURLToPath(import.meta.url));
 
 const dbPath = process.env.DB_PATH || resolve(__dirname, '../../data/antrian.db');
 const dbDir = dirname(dbPath);
@@ -77,7 +78,8 @@ function wrapDb(sqlJsDb) {
 }
 
 export async function initDB() {
-  const SQL = await initSqlJs();
+  const wasmPath = process.env.SQLJS_WASM_PATH;
+  const SQL = await initSqlJs(wasmPath ? { locateFile: () => wasmPath } : {});
 
   if (existsSync(dbPath)) {
     const buffer = readFileSync(dbPath);
