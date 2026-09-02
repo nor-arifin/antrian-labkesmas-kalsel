@@ -15,7 +15,8 @@ CLAUDE.md
 
 # Electron packaging
 electron/node_modules/
-electron/release/
+electron/release/win-unpacked/
+electron/release/win-ia32-unpacked/
 electron/server.bundle.cjs
 electron/dist/
 electron/public/
