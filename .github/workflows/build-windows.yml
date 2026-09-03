@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -24,9 +26,6 @@ jobs:
 
       - name: Build frontend (vite)
         run: npm run build
-
-      - name: Bundle server (esbuild)
-        run: node scripts/prepare-electron.mjs
 
       - name: Install electron deps
         working-directory: electron

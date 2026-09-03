@@ -6,15 +6,11 @@
   "author": "Labkesda Kalsel",
   "license": "MIT",
   "scripts": {
-    "start": "node ../scripts/prepare-electron.mjs && electron .",
-    "dist": "node ../scripts/prepare-electron.mjs && electron-builder --win"
-  },
-  "dependencies": {
-    "pdfkit": "^0.15.0",
-    "sql.js": "^1.11.0"
+    "start": "electron .",
+    "dist": "electron-builder --win"
   },
   "devDependencies": {
-    "electron": "22.3.27",
+    "electron": "^28.3.3",
     "electron-builder": "^24.13.3"
   },
   "build": {
@@ -26,30 +22,14 @@
     "files": [
       "main.js",
       "preload.js",
-      "server.bundle.cjs",
       "package.json"
-    ],
-    "extraResources": [
-      {
-        "from": "../dist",
-        "to": "app-dist"
-      },
-      {
-        "from": "../public",
-        "to": "app-public"
-      },
-      {
-        "from": "../node_modules/sql.js/dist/sql-wasm.wasm",
-        "to": "sql-wasm.wasm"
-      }
     ],
     "win": {
       "target": [
         {
           "target": "nsis",
           "arch": [
-            "x64",
-            "ia32"
+            "x64"
           ]
         }
       ],
@@ -63,8 +43,5 @@
       "shortcutName": "Antrian Kiosk",
       "artifactName": "${productName}-Setup-${version}-${arch}.${ext}"
     }
-  },
-  "allowScripts": {
-    "electron@22.3.27": true
   }
 }

@@ -11,9 +11,7 @@
     "preview": "vite preview",
     "start": "NODE_ENV=production node server/index.js",
     "setup": "node server/db/schema.js && node server/db/seed.js",
-    "build:electron": "npm run build && node scripts/prepare-electron.mjs",
-    "dist:win": "npm run build:electron && cd electron && npx electron-builder --win",
-    "kiosk": "node scripts/prepare-electron.mjs && cd electron && electron ."
+    "kiosk": "cd electron && electron ."
   },
   "dependencies": {
     "cors": "^2.8.5",
