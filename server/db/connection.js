@@ -1,5 +1,5 @@
 import initSqlJs from 'sql.js';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 
@@ -7,17 +7,60 @@ const __dirname = typeof globalThis.__dirname !== 'undefined'
   ? globalThis.__dirname
   : dirname(fileURLToPath(import.meta.url));
 
-const dbPath = process.env.DB_PATH || resolve(__dirname, '../../data/antrian.db');
-const dbDir = dirname(dbPath);
-mkdirSync(dbDir, { recursive: true });
+function resolveDbPath() {
+  const fromEnv = process.env.DB_PATH;
+  return fromEnv && fromEnv.trim() ? fromEnv : resolve(__dirname, '../../data/antrian.db');
+}
+
+function validateDbPath(p) {
+  mkdirSync(dirname(p), { recursive: true });
+
+  if (existsSync(p)) {
+    if (statSync(p).isDirectory()) {
+      throw new Error(
+        `[DB] DB_PATH points to a directory, not a file: ${p}\n` +
+        `[DB] Fix: set DB_PATH to a full file path, e.g. '/app/data/antrian.db'`
+      );
+    }
+    return;
+  }
+
+  const looksTypo = /\/antrian\/?$/.test(p) || /\/antrian\/db$/.test(p);
+  if (looksTypo) {
+    throw new Error(
+      `[DB] DB_PATH looks malformed: ${p}\n` +
+      `[DB] Did you mean '/app/data/antrian.db'? ` +
+      `Fix DB_PATH env var (remove trailing '/db' or '/').`
+    );
+  }
+
+  const stem = p.replace(/\.[^./]+$/, '');
+  if (stem !== p && existsSync(stem) && statSync(stem).isDirectory()) {
+    throw new Error(
+      `[DB] Expected file at ${p} but found directory at ${stem}.\n` +
+      `[DB] Likely leftover from extracting a backup incorrectly.\n` +
+      `[DB] On host: 'rm -rf ${stem}' after backing up any real DB elsewhere.`
+    );
+  }
+
+  console.log(`[DB] No existing DB at ${p}; will create on first write.`);
+}
+
+const dbPath = resolveDbPath();
+validateDbPath(dbPath);
 
 let _sqlDb = null;
 let _wrapper = null;
 
 function saveDB() {
   if (!_sqlDb) return;
-  const data = _sqlDb.export();
-  writeFileSync(dbPath, Buffer.from(data));
+  try {
+    const data = _sqlDb.export();
+    writeFileSync(dbPath, Buffer.from(data));
+  } catch (err) {
+    err.message = `[DB] Failed to persist ${dbPath}: ${err.message}`;
+    throw err;
+  }
 }
 
 function wrapDb(sqlJsDb) {
