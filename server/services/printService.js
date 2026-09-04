@@ -4,7 +4,7 @@ import { join } from 'path';
 import sharp from 'sharp';
 
 const LOGO_SVG_PATH = join(process.cwd(), 'public', 'logo', 'logoticket.svg');
-const LOGO_WIDTH_PX = 384;
+const LOGO_WIDTH_PX = 576;
 
 let _logoSvgBase64 = null;
 let _logoBitmap = null;
@@ -127,7 +127,7 @@ export async function generateTicketHTML(queueId) {
   }
   .center { text-align: center; }
   .logo {
-    width: 80px;
+    width: 72mm;
     height: auto;
     margin: 0 auto 2mm;
     display: block;
