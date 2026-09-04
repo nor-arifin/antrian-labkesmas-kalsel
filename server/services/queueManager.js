@@ -8,7 +8,9 @@ export function generateQueueNumber(serviceId) {
   const today = new Date().toISOString().slice(0, 10);
   const last = db.prepare(`
     SELECT queue_number FROM queues
-    WHERE service_id = ? AND date(created_at) = ?
+    WHERE service_id = ?
+      AND date(created_at) = ?
+      AND status != 'cancelled'
     ORDER BY id DESC LIMIT 1
   `).get(serviceId, today);
 

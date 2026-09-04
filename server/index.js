@@ -1,3 +1,5 @@
+process.env.TZ = process.env.TZ || 'Asia/Pontianak';
+
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
