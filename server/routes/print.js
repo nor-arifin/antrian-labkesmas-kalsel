@@ -8,17 +8,17 @@ import PDFDocument from 'pdfkit';
 export default function printRoutes(io) {
   const router = Router();
 
-  router.post('/print/ticket', (req, res) => {
+  router.post('/print/ticket', async (req, res) => {
     try {
       const { queueId } = req.body;
       if (!queueId) return res.status(400).json({ error: 'queueId required' });
 
-      const html = generateTicketHTML(queueId);
+      const html = await generateTicketHTML(queueId);
       const printerDevice = process.env.PRINTER_DEVICE;
 
       if (printerDevice) {
         try {
-          const { lines } = generateTicket(queueId);
+          const { lines } = await generateTicket(queueId);
           const escposBytes = buildESCPOS(lines);
           const tmpFile = `/tmp/ticket_${queueId}.bin`;
           writeFileSync(tmpFile, Buffer.from(escposBytes));
@@ -94,12 +94,28 @@ function buildESCPOS(lines) {
   const bytes = [0x1B, 0x40];
 
   for (const line of lines) {
+    if (line.type === 'image' && line.bitmap) {
+      const { width, height, bytes: imgBytes } = line.bitmap;
+      const xL = width & 0xFF;
+      const xH = (width >> 8) & 0xFF;
+      const yL = height & 0xFF;
+      const yH = (height >> 8) & 0xFF;
+      bytes.push(0x1D, 0x76, 0x30, 0x00, xL, xH, yL, yH);
+      for (const b of imgBytes) bytes.push(b);
+      bytes.push(0x0A);
+      continue;
+    }
+
     if (line.align === 'center') bytes.push(0x1B, 0x61, 0x01);
     else if (line.align === 'right') bytes.push(0x1B, 0x61, 0x02);
     else bytes.push(0x1B, 0x61, 0x00);
 
     if (line.bold) bytes.push(0x1B, 0x45, 0x01);
     else bytes.push(0x1B, 0x45, 0x00);
+
+    if (line.prePad) {
+      for (let i = 0; i < line.prePad; i++) bytes.push(0x20);
+    }
 
     if (line.size && line.size[0] > 1) {
       const w = Math.min(line.size[0] - 1, 7);
@@ -110,8 +126,12 @@ function buildESCPOS(lines) {
     }
 
     const encoder = new TextEncoder();
-    bytes.push(...encoder.encode(line.text));
+    bytes.push(...encoder.encode(line.text || ''));
     bytes.push(0x0A);
+
+    if (line.postPad) {
+      for (let i = 0; i < line.postPad; i++) bytes.push(0x20);
+    }
   }
 
   bytes.push(0x1D, 0x56, 0x00);

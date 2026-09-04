@@ -1,8 +1,54 @@
 import { getDb } from '../db/connection.js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import sharp from 'sharp';
 
-export function generateTicket(queueId) {
+const LOGO_SVG_PATH = join(process.cwd(), 'public', 'logo', 'logoticket.svg');
+const LOGO_WIDTH_PX = 384;
+
+let _logoSvgBase64 = null;
+let _logoBitmap = null;
+
+async function loadLogoAssets() {
+  if (_logoSvgBase64 && _logoBitmap) return;
+
+  const svg = readFileSync(LOGO_SVG_PATH, 'utf8');
+  _logoSvgBase64 = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+
+  const { data, info } = await sharp(Buffer.from(svg))
+    .resize(LOGO_WIDTH_PX)
+    .greyscale()
+    .normalise()
+    .threshold(128)
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const bytesPerRow = Math.ceil(info.width / 8);
+  const padded = Buffer.alloc(bytesPerRow * info.height);
+  for (let row = 0; row < info.height; row++) {
+    for (let col = 0; col < info.width; col++) {
+      const srcIdx = row * info.width + col;
+      if (data[srcIdx] === 0) {
+        const dstIdx = row * bytesPerRow + Math.floor(col / 8);
+        padded[dstIdx] |= 0x80 >> (col % 8);
+      }
+    }
+  }
+
+  _logoBitmap = { width: info.width, height: info.height, bytes: padded };
+}
+
+export async function getLogoSvgBase64() {
+  await loadLogoAssets();
+  return _logoSvgBase64;
+}
+
+export async function getLogoBitmap() {
+  await loadLogoAssets();
+  return _logoBitmap;
+}
+
+export async function generateTicket(queueId) {
   const db = getDb();
   const queue = db.prepare(`
     SELECT q.*, s.name as service_name, s.prefix
@@ -13,14 +59,10 @@ export function generateTicket(queueId) {
 
   if (!queue) throw new Error('Queue not found');
 
-  const clinicName = db.prepare("SELECT value FROM settings WHERE key = 'clinic_name'").get()?.value || 'LABKESDA KALTENG';
-
   const waitingCount = db.prepare(`
     SELECT COUNT(*) as count FROM queues
     WHERE service_id = ? AND status = 'waiting' AND created_at < ?
   `).get(queue.service_id, queue.created_at)?.count || 0;
-
-  const estMinutes = waitingCount * 5;
 
   const now = new Date();
   const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -28,54 +70,44 @@ export function generateTicket(queueId) {
 
   const priorityText = queue.priority === 3 ? 'Cito' : queue.priority === 1 ? 'Lansia' : queue.priority === 2 ? 'Ibu Hamil' : 'Tidak';
 
-  const CHARS = 48;
-  const name = clinicName.length > CHARS ? clinicName.slice(0, CHARS) : clinicName;
+  const logoBitmap = await getLogoBitmap();
 
   const lines = [
+    { type: 'image', bitmap: logoBitmap, align: 'center' },
     { text: '', align: 'center', bold: false, size: [1,1] },
-    { text: name, align: 'center', bold: true, size: [1,1] },
-    { text: '================================', align: 'center', bold: false, size: [1,1] },
+    { text: '- - - - - - - - - - - - - - - - - - - - - - - - - -', align: 'center', bold: false, size: [1,1] },
     { text: '', align: 'center', bold: false, size: [1,1] },
-    { text: queue.queue_number, align: 'center', bold: true, size: [3,3] },
+    { text: queue.queue_number, align: 'center', bold: true, size: [4,4], prePad: 16, postPad: 16 },
     { text: '', align: 'center', bold: false, size: [1,1] },
-    { text: `Layanan   : ${queue.service_name}`, align: 'left', bold: false, size: [1,1] },
-    { text: `Prioritas : ${priorityText}`, align: 'left', bold: false, size: [1,1] },
-    { text: `Antrian di depan : ${waitingCount} orang`, align: 'left', bold: false, size: [1,1] },
-    { text: `Estimasi tunggu  : ~${estMinutes} menit`, align: 'left', bold: false, size: [1,1] },
+    { text: `LAYANAN     : ${queue.service_name}`, align: 'left', bold: false, size: [1,1] },
+    { text: `PRIORITAS   : ${priorityText}`, align: 'left', bold: false, size: [1,1] },
+    { text: `ANTRIAN DI DEPAN : ${waitingCount} orang`, align: 'left', bold: false, size: [1,1] },
     { text: '', align: 'center', bold: false, size: [1,1] },
-    { text: '================================', align: 'center', bold: false, size: [1,1] },
+    { text: '- - - - - - - - - - - - - - - - - - - - - - - - - -', align: 'center', bold: false, size: [1,1] },
     { text: `${dateStr}  ${timeStr}`, align: 'center', bold: false, size: [1,1] },
+    { text: '', align: 'center', bold: false, size: [1,1] },
+    { text: 'Terima kasih atas kunjungan Anda', align: 'center', bold: false, size: [1,1] },
+    { text: 'Simpan tiket sebagai bukti antrian', align: 'center', bold: false, size: [1,1] },
   ];
 
   return { lines, queue };
 }
 
-export function generateTicketHTML(queueId) {
-  const { queue } = generateTicket(queueId);
-
-  const clinicName = getDb().prepare("SELECT value FROM settings WHERE key = 'clinic_name'").get()?.value || 'LABKESDA KALTENG';
+export async function generateTicketHTML(queueId) {
+  const { queue } = await generateTicket(queueId);
 
   const waitingCount = getDb().prepare(`
     SELECT COUNT(*) as count FROM queues
     WHERE service_id = ? AND status = 'waiting' AND created_at < ?
   `).get(queue.service_id, queue.created_at)?.count || 0;
 
-  const estMinutes = waitingCount * 5;
-
   const now = new Date();
   const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
   const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 
   const priorityText = queue.priority === 3 ? 'Cito' : queue.priority === 1 ? 'Lansia' : queue.priority === 2 ? 'Ibu Hamil' : 'Tidak';
 
-  let logoBase64 = '';
-  try {
-    const logoPath = join(process.cwd(), 'public', 'logo', 'antian_logo.svg');
-    const logoSvg = readFileSync(logoPath, 'utf8');
-    logoBase64 = `data:image/svg+xml;base64,${Buffer.from(logoSvg).toString('base64')}`;
-  } catch (e) {
-    logoBase64 = '';
-  }
+  const logoBase64 = await getLogoSvgBase64();
 
   return `
 <!DOCTYPE html>
@@ -94,28 +126,51 @@ export function generateTicketHTML(queueId) {
     padding: 3mm;
   }
   .center { text-align: center; }
-  .bold { font-weight: bold; }
-  .large { font-size: 24px; }
-  .logo { width: 50px; margin: 0 auto 2mm; display: block; }
-  .divider { border-top: 1px dashed #000; margin: 3mm 0; }
-  .row { display: flex; justify-content: space-between; }
-  .label { color: #555; }
+  .logo {
+    width: 80px;
+    height: auto;
+    margin: 0 auto 2mm;
+    display: block;
+  }
+  .divider {
+    border-top: 1px dashed #000;
+    margin: 3mm 0;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: #555;
+  }
+  .queue-number {
+    font-size: 56px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    text-align: center;
+    margin: 4mm 0;
+    font-family: 'Courier New', Courier, monospace;
+  }
+  .field { margin: 1mm 0; font-size: 11px; }
+  .footer {
+    font-size: 10px;
+    font-style: italic;
+    text-align: center;
+    margin-top: 1mm;
+    color: #333;
+  }
 </style>
 </head>
 <body>
   <div class="center">
     ${logoBase64 ? `<img src="${logoBase64}" class="logo" />` : ''}
-    <div class="bold">${clinicName}</div>
   </div>
-  <div class="divider"></div>
-  <div class="center bold large">${queue.queue_number}</div>
-  <div class="divider"></div>
-  <div>Layanan   : ${queue.service_name}</div>
-  <div>Prioritas : ${priorityText}</div>
-  <div>Antrian di depan : ${waitingCount} orang</div>
-  <div>Estimasi tunggu  : ~${estMinutes} menit</div>
-  <div class="divider"></div>
+  <div class="divider">- - - - - - - - - - - - - - -</div>
+  <div class="queue-number">${queue.queue_number}</div>
+  <div class="divider">- - - - - - - - - - - - - - -</div>
+  <div class="field">LAYANAN     : ${queue.service_name}</div>
+  <div class="field">PRIORITAS   : ${priorityText}</div>
+  <div class="field">ANTRIAN DI DEPAN : ${waitingCount} orang</div>
+  <div class="divider">- - - - - - - - - - - - - - -</div>
   <div class="center">${dateStr}  ${timeStr}</div>
+  <div class="footer">Terima kasih atas kunjungan Anda</div>
+  <div class="footer">Simpan tiket sebagai bukti antrian</div>
 </body>
 </html>`;
 }
