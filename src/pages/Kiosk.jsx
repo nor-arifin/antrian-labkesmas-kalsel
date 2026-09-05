@@ -80,7 +80,7 @@ export default function Kiosk() {
           <FloatingCircles />
           <div className="text-center relative z-10">
             <div className="mb-6">
-              <img src="/logo/antian_logo.svg" alt="Logo" className="w-28 h-28 mx-auto drop-shadow-2xl" />
+              <img src="/logo/logoui.png" alt="Logo" className="w-28 h-28 mx-auto drop-shadow-2xl" />
             </div>
             <p className="text-2xl mb-4 opacity-80">Nomor Antrian Anda</p>
             <div className="text-[120px] font-black leading-none tracking-tight drop-shadow-lg" style={{ textShadow: '0 4px 30px rgba(0,0,0,0.3)' }}>{result.queue_number}</div>
@@ -122,7 +122,7 @@ export default function Kiosk() {
 
       <header className="text-white text-center py-10 px-4 relative z-10">
         <div className="mb-4">
-          <img src="/logo/antian_logo.svg" alt="Logo" className="w-24 h-24 mx-auto drop-shadow-2xl" />
+          <img src="/logo/logoui.png" alt="Logo" className="w-24 h-24 mx-auto drop-shadow-2xl" />
         </div>
         <h1 className="text-4xl font-black tracking-tight mb-1" style={{ textShadow: '0 2px 20px rgba(0,0,0,0.2)' }}>LABORATORIUM KESEHATAN</h1>
         <h2 className="text-2xl font-light opacity-90">PROVINSI KALIMANTAN SELATAN</h2>

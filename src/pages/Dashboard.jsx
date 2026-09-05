@@ -420,7 +420,7 @@ export default function Dashboard() {
 
       <header className="bg-gradient-to-r from-blue-700 to-indigo-700 text-white py-4 px-6 flex justify-between items-center shadow-xl">
         <div className="flex items-center gap-3">
-          <img src="/logo/antian_logo.svg" alt="Logo" className="w-10 h-10" />
+          <img src="/logo/logoui.png" alt="Logo" className="w-10 h-10" />
           <div>
             <h1 className="text-xl font-black">Dashboard Admin</h1>
             <p className="text-xs opacity-70">Labkesda Kalsel</p>

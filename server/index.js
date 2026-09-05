@@ -14,6 +14,7 @@ import counterRoutes from './routes/counter.js';
 import reportRoutes from './routes/report.js';
 import printRoutes from './routes/print.js';
 import settingsRoutes from './routes/settings.js';
+import resetRoutes from './routes/reset.js';
 import { setupSocket } from './socket/handlers.js';
 import { startScheduler } from './services/scheduler.js';
 
@@ -50,6 +51,7 @@ app.use('/api', counterRoutes(io));
 app.use('/api', reportRoutes);
 app.use('/api', printRoutes(io));
 app.use('/api', settingsRoutes(io));
+app.use('/api', resetRoutes(io));
 
 if (isProd) {
   app.get('/sw.js', (req, res) => {

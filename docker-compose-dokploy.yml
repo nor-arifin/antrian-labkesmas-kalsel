@@ -6,9 +6,9 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ./data:/app/data
-      - ./public/audio:/app/public/audio
-      - ./public/videos:/app/public/videos
+      - antrian-data:/app/data
+      - antrian-audio:/app/public/audio
+      - antrian-videos:/app/public/videos
     environment:
       - NODE_ENV=production
       - PORT=3001
@@ -30,3 +30,8 @@ networks:
   dokploy-network:
     name: dokploy-network
     external: true
+
+volumes:
+  antrian-data:
+  antrian-audio:
+  antrian-videos:

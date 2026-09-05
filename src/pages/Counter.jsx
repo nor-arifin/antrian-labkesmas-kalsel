@@ -157,7 +157,7 @@ export default function Counter() {
     <PinGate pageName="Counter">
     <div className="min-h-screen bg-[#f8fafc] flex flex-col">
       <header className="bg-gradient-to-r from-[#11B9A0] to-[#0d9488] text-white py-5 px-8 flex items-center gap-4 shadow-lg">
-        <img src="/logo/antian_logo.svg" alt="Logo" className="w-12 h-12 drop-shadow-md" />
+        <img src="/logo/logoui.png" alt="Logo" className="w-12 h-12 drop-shadow-md" />
         <div className="flex-1">
           <h1 className="text-2xl font-black">{counter.name}</h1>
           <p className="text-sm text-white/70">{counter.service_name}</p>

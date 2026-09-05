@@ -82,7 +82,7 @@ export default function Display() {
         </div>
       )}
       <header className="bg-gradient-to-r from-[#11B9A0] to-[#0d9488] py-4 px-8 flex items-center gap-5 shadow-lg">
-        <img src="/logo/antian_logo.svg" alt="Logo" className="w-14 h-14 drop-shadow-md" />
+        <img src="/logo/logoui.png" alt="Logo" className="w-14 h-14 drop-shadow-md" />
         <div>
           <h1 className="text-2xl font-black tracking-tight text-white">LABORATORIUM KESEHATAN PROV. KALIMANTAN SELATAN</h1>
           <p className="text-sm text-white/70">Sistem Antrian Digital</p>

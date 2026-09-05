@@ -5,7 +5,7 @@ export function generateQueueNumber(serviceId) {
   const service = db.prepare('SELECT prefix FROM services WHERE id = ?').get(serviceId);
   if (!service) throw new Error('Service not found');
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Pontianak' });
   const last = db.prepare(`
     SELECT queue_number FROM queues
     WHERE service_id = ?
@@ -96,7 +96,7 @@ export function getActiveQueues() {
 
 export function getQueueStats() {
   const db = getDb();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Pontianak' });
   return db.prepare(`
     SELECT
       COUNT(*) as total,

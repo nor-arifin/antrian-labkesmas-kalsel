@@ -63,7 +63,7 @@ export default function PinGate({ children, pageName = 'Aplikasi' }) {
           <div className="absolute w-[200px] h-[200px] rounded-full bg-[#d3dd03] bottom-[-40px] right-[-40px]"></div>
         </div>
         <div className="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl text-center relative z-10">
-          <img src="/logo/antian_logo.svg" alt="Logo" className="w-20 h-20 mx-auto mb-6 drop-shadow-md" />
+          <img src="/logo/logoui.png" alt="Logo" className="w-20 h-20 mx-auto mb-6 drop-shadow-md" />
           <h1 className="text-xl font-black text-gray-800 mb-1">Sistem Antrian Digital</h1>
           <p className="text-sm text-gray-400 mb-8">Labkesda Kalsel</p>
           <form onSubmit={handleSubmit}>
