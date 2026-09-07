@@ -23,6 +23,7 @@ export default function Dashboard() {
   const [videoEnabled, setVideoEnabled] = useState(false);
   const [videoUrl, setVideoUrl] = useState(null);
   const [videoUploading, setVideoUploading] = useState(false);
+  const [displayTheme, setDisplayTheme] = useState('dark');
   const { on } = useSocket();
 
   useEffect(() => { loadData(); loadSettings(); }, []);
@@ -59,6 +60,7 @@ export default function Dashboard() {
       setRunningText(res.data.running_text || '');
       setVideoEnabled(res.data.video_enabled === '1');
       setVideoUrl(res.data.video_url || null);
+      setDisplayTheme(res.data.display_theme === 'light' ? 'light' : 'dark');
     } catch (err) {
       console.error(err);
     }
@@ -70,6 +72,16 @@ export default function Dashboard() {
       showToast('Running text berhasil disimpan');
     } catch (err) {
       showToast('Gagal menyimpan running text', 'error');
+    }
+  }
+
+  async function handleChangeTheme(th) {
+    try {
+      await api.updateSetting('display_theme', th);
+      setDisplayTheme(th);
+      showToast(`Tema display diubah ke ${th === 'dark' ? 'Dark' : 'Light'}`);
+    } catch (err) {
+      showToast('Gagal mengubah tema', 'error');
     }
   }
 
@@ -791,6 +803,35 @@ export default function Dashboard() {
 
         {tab === 'settings' && (
           <div className="max-w-3xl">
+            <div className="bg-white rounded-2xl p-6 shadow-xl border border-gray-100">
+              <h3 className="text-lg font-bold mb-4">🎨 Tema Tampilan Display</h3>
+              <p className="text-sm text-gray-500 mb-4">Pilih tema warna untuk layar antrian (perubahan langsung tampil di display).</p>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => handleChangeTheme('dark')}
+                  className={`flex items-center gap-3 px-5 py-3 rounded-2xl border-2 font-bold transition cursor-pointer ${
+                    displayTheme === 'dark'
+                      ? 'border-[#0d9488] bg-[#0d9488]/10 text-[#0f766e]'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0e7490] via-[#0d9488] to-[#14b8a6] inline-block shadow"></span>
+                  🌙 Dark (Cerah & Kontras)
+                </button>
+                <button
+                  onClick={() => handleChangeTheme('light')}
+                  className={`flex items-center gap-3 px-5 py-3 rounded-2xl border-2 font-bold transition cursor-pointer ${
+                    displayTheme === 'light'
+                      ? 'border-[#0d9488] bg-[#0d9488]/10 text-[#0f766e]'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#ccfbf1] via-[#f0fdfa] to-[#e6fffb] border border-gray-200 inline-block"></span>
+                  ☀️ Light
+                </button>
+              </div>
+            </div>
+
             <div className="bg-white rounded-2xl p-6 shadow-xl border border-gray-100">
               <h3 className="text-lg font-bold mb-4">Running Text (Tampil di Layar Display)</h3>
               <p className="text-sm text-gray-500 mb-4">Teks ini akan berjalan (marquee) di bagian bawah layar antrian.</p>
