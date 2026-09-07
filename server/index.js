@@ -1,4 +1,4 @@
-process.env.TZ = process.env.TZ || 'Asia/Pontianak';
+process.env.TZ = process.env.TZ || 'Asia/Makassar';
 
 import express from 'express';
 import { createServer } from 'http';

@@ -15,7 +15,7 @@ services:
       - DB_PATH=/app/data/antrian.db
       - CLINIC_NAME=LABORATORIUM KESEHATAN PROVINSI KALIMANTAN SELATAN
       - RESET_HOUR=23
-      - TZ=Asia/Pontianak
+      - TZ=Asia/Makassar
     networks:
       - dokploy-network
     labels:

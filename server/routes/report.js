@@ -6,7 +6,7 @@ const router = Router();
 router.get('/report/daily', (req, res) => {
   try {
     const db = getDb();
-    const date = req.query.date || new Date().toISOString().slice(0, 10);
+    const date = req.query.date || new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Makassar' });
 
     const stats = db.prepare(`
       SELECT
@@ -68,8 +68,8 @@ router.get('/report/daily', (req, res) => {
 router.get('/report/weekly', (req, res) => {
   try {
     const db = getDb();
-    const end = req.query.end || new Date().toISOString().slice(0, 10);
-    const start = req.query.start || new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+    const end = req.query.end || new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Makassar' });
+    const start = req.query.start || new Date(Date.now() - 6 * 86400000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Makassar' });
 
     const daily = db.prepare(`
       SELECT
@@ -122,7 +122,7 @@ router.get('/report/monthly', (req, res) => {
 router.get('/report/daily-detail', (req, res) => {
   try {
     const db = getDb();
-    const date = req.query.date || new Date().toISOString().slice(0, 10);
+    const date = req.query.date || new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Makassar' });
 
     const queues = db.prepare(`
       SELECT

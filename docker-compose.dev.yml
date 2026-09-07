@@ -17,5 +17,5 @@ services:
       - DB_PATH=/app/data/antrian.db
       - CLINIC_NAME=LABORATORIUM KESEHATAN PROVINSI KALIMANTAN TENGAH
       - RESET_HOUR=23
-      - TZ=Asia/Pontianak
+      - TZ=Asia/Makassar
     restart: unless-stopped

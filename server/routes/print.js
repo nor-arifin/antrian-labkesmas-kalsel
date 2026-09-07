@@ -39,7 +39,7 @@ export default function printRoutes(io) {
   router.get('/report/daily/pdf', (req, res) => {
     try {
       const db = getDb();
-      const date = req.query.date || new Date().toISOString().slice(0, 10);
+      const date = req.query.date || new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Makassar' });
 
       const doc = new PDFDocument({ margin: 40 });
       res.setHeader('Content-Type', 'application/pdf');

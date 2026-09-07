@@ -157,5 +157,5 @@ Bisa dibangun dari macOS (electron-builder mengunduh tooling-nya sendiri). Atau 
 
 ## Catatan Penting
 - **Satu database**: semua data (nomor antrian, laporan) hidup di server VPS. Jangan jalankan mode lokal untuk produksi — hanya untuk tes.
-- **Reset harian** otomatis jam **23:00** (Asia/Pontianak) — hari baru mulai tanpa perlu reset manual.
+- **Reset harian** otomatis jam **23:00** (Asia/Makassar) — hari baru mulai tanpa perlu reset manual.
 - **Windows 8.1**: didukung penuh untuk **kiosk .exe**. Untuk browser (counter/display), gunakan PC/layar dengan OS lebih baru karena browser modern sudah tidak mendukung 8.1.

@@ -165,8 +165,8 @@ export default function Display() {
 
   const waitingQueues = queues.filter(q => q.status === 'waiting');
   const showVideo = videoEnabled && videoUrl;
-  const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  const date = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const time = now.toLocaleTimeString('id-ID', { timeZone: 'Asia/Makassar', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const date = now.toLocaleDateString('id-ID', { timeZone: 'Asia/Makassar', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const t = THEMES[theme] || THEMES.dark;
 
   return (
