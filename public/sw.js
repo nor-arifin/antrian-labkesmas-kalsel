@@ -1,4 +1,4 @@
-const CACHE_NAME = 'antrian-v1';
+const CACHE_NAME = 'antrian-v2';
 const AUDIO_CACHE = 'antrian-audio-v1';
 const VIDEO_CACHE = 'antrian-video-v1';
 

@@ -15,7 +15,7 @@ export function useAudio() {
       try {
         await new Promise((resolve, reject) => {
           const audio = new Audio(file);
-          audio.playbackRate = 1.5;
+          audio.playbackRate = 2.0;
           audio.onended = resolve;
           audio.onerror = () => reject(new Error(`Failed to load ${file}`));
           audio.play().catch(reject);
